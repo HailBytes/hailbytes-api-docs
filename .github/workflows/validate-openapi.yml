@@ -1,0 +1,34 @@
+name: Validate OpenAPI Specs
+
+on:
+  push:
+    paths:
+      - '*/openapi.yaml'
+      - '*/openapi.json'
+  pull_request:
+    paths:
+      - '*/openapi.yaml'
+      - '*/openapi.json'
+
+jobs:
+  spectral:
+    name: Lint with Spectral
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Spectral
+        run: npm install -g @stoplight/spectral-cli
+
+      - name: Lint ASM OpenAPI spec
+        if: ${{ hashFiles('asm/openapi.yaml') != '' }}
+        run: spectral lint asm/openapi.yaml --ruleset spectral:oas --fail-severity warn
+
+      - name: Lint SAT OpenAPI spec
+        if: ${{ hashFiles('sat/openapi.yaml') != '' }}
+        run: spectral lint sat/openapi.yaml --ruleset spectral:oas --fail-severity warn

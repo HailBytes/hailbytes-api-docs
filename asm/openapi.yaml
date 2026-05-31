@@ -1,0 +1,841 @@
+openapi: 3.1.0
+
+info:
+  title: HailBytes ASM API
+  version: 1.0.0
+  description: |
+    REST API for **HailBytes Attack Surface Management (ASM)** — continuous asset
+    discovery, inventory management, and vulnerability correlation for enterprise
+    security teams and MSSPs.
+
+    ## Authentication
+    All endpoints require a Bearer token issued from the HailBytes dashboard.
+    Pass it in the `Authorization` header:
+    ```
+    Authorization: Bearer <your-api-key>
+    ```
+
+    ## Pagination
+    List endpoints return paginated results. Use the `page` and `per_page` query
+    parameters to navigate pages. The response envelope includes `meta.total`,
+    `meta.page`, and `meta.per_page`.
+
+    ## Rate Limiting
+    Requests are limited to **600 per minute** per API key. The current limit
+    and remaining quota are returned in `X-RateLimit-Limit` and
+    `X-RateLimit-Remaining` response headers.
+  contact:
+    name: HailBytes Support
+    email: support@hailbytes.com
+    url: https://hailbytes.com/docs
+  license:
+    name: Mozilla Public License 2.0
+    url: https://opensource.org/licenses/MPL-2.0
+
+servers:
+  - url: https://api.hailbytes.com/asm/v1
+    description: Production
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Assets
+    description: Discovered network assets and host inventory
+  - name: Scans
+    description: On-demand and scheduled surface scans
+  - name: Vulnerabilities
+    description: Correlated vulnerability findings across assets
+  - name: Tags
+    description: Organizational labels for assets
+
+paths:
+  /assets:
+    get:
+      operationId: listAssets
+      summary: List assets
+      description: Returns a paginated list of all discovered assets in the tenant.
+      tags: [Assets]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - name: type
+          in: query
+          description: Filter by asset type
+          schema:
+            $ref: '#/components/schemas/AssetType'
+        - name: status
+          in: query
+          description: Filter by asset status
+          schema:
+            $ref: '#/components/schemas/AssetStatus'
+        - name: tag
+          in: query
+          description: Filter by tag name (repeatable)
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - name: q
+          in: query
+          description: Full-text search across hostname, IP, and domain fields
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated list of assets
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedMeta'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Asset'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /assets/{asset_id}:
+    parameters:
+      - $ref: '#/components/parameters/AssetId'
+    get:
+      operationId: getAsset
+      summary: Get asset
+      description: Returns a single asset by ID, including full metadata and open port details.
+      tags: [Assets]
+      responses:
+        '200':
+          description: Asset detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateAsset
+      summary: Update asset
+      description: Update mutable fields on an asset (tags, owner, notes).
+      tags: [Assets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetUpdate'
+      responses:
+        '200':
+          description: Updated asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteAsset
+      summary: Archive asset
+      description: |
+        Marks an asset as archived. Archived assets are excluded from active
+        inventory counts but retained for audit history.
+      tags: [Assets]
+      responses:
+        '204':
+          description: Asset archived
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /scans:
+    get:
+      operationId: listScans
+      summary: List scans
+      description: Returns a paginated list of all scans ordered by creation date descending.
+      tags: [Scans]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/ScanStatus'
+      responses:
+        '200':
+          description: Paginated list of scans
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedMeta'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Scan'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: triggerScan
+      summary: Trigger scan
+      description: |
+        Enqueues a new on-demand scan. The scan runs asynchronously; poll
+        `GET /scans/{scan_id}` or subscribe to webhooks to track completion.
+      tags: [Scans]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanRequest'
+      responses:
+        '202':
+          description: Scan accepted and queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Scan'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /scans/{scan_id}:
+    parameters:
+      - name: scan_id
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '^scn_[a-z0-9]{16}$'
+        example: scn_a1b2c3d4e5f60001
+    get:
+      operationId: getScan
+      summary: Get scan
+      description: Returns the current state and summary statistics of a scan.
+      tags: [Scans]
+      responses:
+        '200':
+          description: Scan detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /vulnerabilities:
+    get:
+      operationId: listVulnerabilities
+      summary: List vulnerabilities
+      description: Returns a paginated list of vulnerability findings correlated across all assets.
+      tags: [Vulnerabilities]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - name: severity
+          in: query
+          description: Filter by severity level (repeatable)
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Severity'
+          style: form
+          explode: true
+        - name: asset_id
+          in: query
+          description: Scope to a specific asset
+          schema:
+            type: string
+            pattern: '^ast_[a-z0-9]{16}$'
+        - name: cve
+          in: query
+          description: Filter by CVE identifier (e.g. CVE-2024-1234)
+          schema:
+            type: string
+            pattern: '^CVE-\d{4}-\d{4,}$'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/VulnStatus'
+      responses:
+        '200':
+          description: Paginated list of vulnerability findings
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedMeta'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Vulnerability'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /vulnerabilities/{vuln_id}:
+    parameters:
+      - name: vuln_id
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '^vln_[a-z0-9]{16}$'
+        example: vln_x9y8z7w6v5u40001
+    get:
+      operationId: getVulnerability
+      summary: Get vulnerability
+      description: Returns full detail for a single vulnerability finding, including remediation guidance.
+      tags: [Vulnerabilities]
+      responses:
+        '200':
+          description: Vulnerability detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VulnerabilityDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateVulnerability
+      summary: Update vulnerability
+      description: Update the status or add a note to a vulnerability finding.
+      tags: [Vulnerabilities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VulnerabilityUpdate'
+      responses:
+        '200':
+          description: Updated vulnerability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VulnerabilityDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /tags:
+    get:
+      operationId: listTags
+      summary: List tags
+      tags: [Tags]
+      responses:
+        '200':
+          description: All tags in the tenant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Tag'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createTag
+      summary: Create tag
+      tags: [Tags]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  maxLength: 64
+                color:
+                  type: string
+                  pattern: '^#[0-9a-fA-F]{6}$'
+                  example: '#e63946'
+      responses:
+        '201':
+          description: Tag created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API key from the HailBytes dashboard
+
+  parameters:
+    Page:
+      name: page
+      in: query
+      description: Page number (1-indexed)
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PerPage:
+      name: per_page
+      in: query
+      description: Results per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+    AssetId:
+      name: asset_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^ast_[a-z0-9]{16}$'
+      example: ast_1a2b3c4d5e6f0001
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: unauthorized
+              message: Invalid or missing Bearer token
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: not_found
+              message: The requested resource does not exist
+    BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    RateLimited:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the rate limit window resets
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    # ── Enums ──────────────────────────────────────────────────────────────────
+
+    AssetType:
+      type: string
+      enum: [domain, subdomain, ip, ip_range, certificate, web_app, cloud_resource]
+
+    AssetStatus:
+      type: string
+      enum: [active, inactive, archived]
+
+    ScanStatus:
+      type: string
+      enum: [queued, running, completed, failed, cancelled]
+
+    Severity:
+      type: string
+      enum: [critical, high, medium, low, informational]
+
+    VulnStatus:
+      type: string
+      enum: [open, in_progress, accepted_risk, resolved, false_positive]
+
+    # ── Shared ─────────────────────────────────────────────────────────────────
+
+    PaginatedMeta:
+      type: object
+      properties:
+        meta:
+          type: object
+          properties:
+            total:
+              type: integer
+              description: Total number of results across all pages
+            page:
+              type: integer
+            per_page:
+              type: integer
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+
+    Tag:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: tag_0001aabbccdd0001
+        name:
+          type: string
+          example: production
+        color:
+          type: string
+          example: '#2a9d8f'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    # ── Assets ─────────────────────────────────────────────────────────────────
+
+    Asset:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: ast_1a2b3c4d5e6f0001
+        type:
+          $ref: '#/components/schemas/AssetType'
+        value:
+          type: string
+          description: The primary identifier — IP address, domain name, CIDR, or URL
+          example: api.acmecorp.com
+        status:
+          $ref: '#/components/schemas/AssetStatus'
+        first_seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+        last_seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+        open_vulnerability_counts:
+          type: object
+          readOnly: true
+          properties:
+            critical:
+              type: integer
+            high:
+              type: integer
+            medium:
+              type: integer
+            low:
+              type: integer
+            informational:
+              type: integer
+
+    AssetDetail:
+      allOf:
+        - $ref: '#/components/schemas/Asset'
+        - type: object
+          properties:
+            owner:
+              type: string
+              description: Free-text ownership annotation
+              example: platform-team@acmecorp.com
+            notes:
+              type: string
+              maxLength: 4096
+            open_ports:
+              type: array
+              items:
+                type: object
+                properties:
+                  port:
+                    type: integer
+                    minimum: 1
+                    maximum: 65535
+                  protocol:
+                    type: string
+                    enum: [tcp, udp]
+                  service:
+                    type: string
+                    example: https
+                  banner:
+                    type: string
+                    example: nginx/1.24.0
+            certificates:
+              type: array
+              description: TLS certificates observed on this asset
+              items:
+                type: object
+                properties:
+                  subject:
+                    type: string
+                  issuer:
+                    type: string
+                  not_before:
+                    type: string
+                    format: date-time
+                  not_after:
+                    type: string
+                    format: date-time
+                  expires_in_days:
+                    type: integer
+
+    AssetUpdate:
+      type: object
+      properties:
+        owner:
+          type: string
+          maxLength: 255
+        notes:
+          type: string
+          maxLength: 4096
+        tags:
+          type: array
+          description: Replaces the full tag set on the asset
+          items:
+            type: string
+            description: Tag name
+
+    # ── Scans ──────────────────────────────────────────────────────────────────
+
+    ScanRequest:
+      type: object
+      required: [targets]
+      properties:
+        targets:
+          type: array
+          description: List of domains, IPs, or CIDRs to scan
+          minItems: 1
+          maxItems: 100
+          items:
+            type: string
+          example:
+            - acmecorp.com
+            - 203.0.113.0/24
+        scan_type:
+          type: string
+          enum: [full, discovery_only, vuln_only]
+          default: full
+          description: |
+            - `full` — asset discovery + vulnerability checks
+            - `discovery_only` — enumerate hosts and open ports only
+            - `vuln_only` — run vulnerability checks on already-known assets
+        label:
+          type: string
+          maxLength: 128
+          description: Optional human-readable label for this scan run
+
+    Scan:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: scn_a1b2c3d4e5f60001
+        label:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ScanStatus'
+        scan_type:
+          type: string
+          enum: [full, discovery_only, vuln_only]
+        targets:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+
+    ScanDetail:
+      allOf:
+        - $ref: '#/components/schemas/Scan'
+        - type: object
+          properties:
+            summary:
+              type: object
+              readOnly: true
+              properties:
+                assets_discovered:
+                  type: integer
+                assets_updated:
+                  type: integer
+                vulnerabilities_found:
+                  type: integer
+                vulnerabilities_by_severity:
+                  type: object
+                  properties:
+                    critical:
+                      type: integer
+                    high:
+                      type: integer
+                    medium:
+                      type: integer
+                    low:
+                      type: integer
+                    informational:
+                      type: integer
+            error_message:
+              type: string
+              nullable: true
+              description: Set when status is `failed`
+
+    # ── Vulnerabilities ────────────────────────────────────────────────────────
+
+    Vulnerability:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: vln_x9y8z7w6v5u40001
+        asset_id:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          example: Apache Log4j Remote Code Execution (Log4Shell)
+        severity:
+          $ref: '#/components/schemas/Severity'
+        status:
+          $ref: '#/components/schemas/VulnStatus'
+        cvss_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 10
+          nullable: true
+          example: 10.0
+        cve_ids:
+          type: array
+          items:
+            type: string
+          example:
+            - CVE-2021-44228
+        first_detected_at:
+          type: string
+          format: date-time
+          readOnly: true
+        last_seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    VulnerabilityDetail:
+      allOf:
+        - $ref: '#/components/schemas/Vulnerability'
+        - type: object
+          properties:
+            description:
+              type: string
+            remediation:
+              type: string
+              description: Step-by-step remediation guidance
+            references:
+              type: array
+              items:
+                type: string
+                format: uri
+            affected_component:
+              type: string
+              example: log4j-core 2.14.1
+            evidence:
+              type: string
+              description: Raw banner or response snippet that confirmed the finding
+            notes:
+              type: string
+              maxLength: 4096
+            history:
+              type: array
+              description: Audit trail of status changes
+              items:
+                type: object
+                properties:
+                  changed_at:
+                    type: string
+                    format: date-time
+                  changed_by:
+                    type: string
+                  from_status:
+                    $ref: '#/components/schemas/VulnStatus'
+                  to_status:
+                    $ref: '#/components/schemas/VulnStatus'
+
+    VulnerabilityUpdate:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/VulnStatus'
+        notes:
+          type: string
+          maxLength: 4096
