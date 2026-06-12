@@ -4,7 +4,22 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>HailBytes API Reference</title>
-    <meta name="description" content="Interactive REST API reference for HailBytes ASM (Attack Surface Management)." />
+    <meta name="description" content="Interactive REST API reference for HailBytes ASM (Attack Surface Management) — asset discovery, vulnerability correlation, and continuous surface scanning." />
+
+    <!-- Open Graph / social sharing -->
+    <meta property="og:type"        content="website" />
+    <meta property="og:url"         content="https://hailbytes.github.io/hailbytes-api-docs/" />
+    <meta property="og:title"       content="HailBytes API Reference" />
+    <meta property="og:description" content="Interactive REST API reference for HailBytes ASM — asset discovery, vulnerability correlation, and continuous surface scanning." />
+    <meta property="og:site_name"   content="HailBytes" />
+
+    <!-- Twitter / X card -->
+    <meta name="twitter:card"        content="summary" />
+    <meta name="twitter:title"       content="HailBytes API Reference" />
+    <meta name="twitter:description" content="Interactive REST API reference for HailBytes ASM — asset discovery, vulnerability correlation, and continuous surface scanning." />
+
+    <link rel="canonical" href="https://hailbytes.github.io/hailbytes-api-docs/" />
+
     <style>
       body { margin: 0; padding: 0; }
     </style>
@@ -16,6 +31,7 @@
            required-props-first="true"
            sort-props-alphabetically="false">
     </redoc>
-    <script src="https://cdn.jsdelivr.net/npm/redoc@latest/bundles/redoc.standalone.js"></script>
+    <!-- Pinned to major version 2 to prevent silent breakage on future Redoc major releases -->
+    <script src="https://cdn.jsdelivr.net/npm/redoc@2/bundles/redoc.standalone.js"></script>
   </body>
 </html>
