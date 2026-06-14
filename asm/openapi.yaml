@@ -493,9 +493,11 @@ components:
 
     PaginatedMeta:
       type: object
+      required: [meta]
       properties:
         meta:
           type: object
+          required: [total, page, per_page]
           properties:
             total:
               type: integer
@@ -529,6 +531,7 @@ components:
 
     Tag:
       type: object
+      required: [id, name, created_at]
       properties:
         id:
           type: string
@@ -549,6 +552,7 @@ components:
 
     Asset:
       type: object
+      required: [id, type, value, status, first_seen_at, last_seen_at, tags, open_vulnerability_counts]
       properties:
         id:
           type: string
@@ -685,6 +689,7 @@ components:
 
     Scan:
       type: object
+      required: [id, status, scan_type, targets, created_at]
       properties:
         id:
           type: string
@@ -754,6 +759,7 @@ components:
 
     Vulnerability:
       type: object
+      required: [id, asset_id, title, severity, status, first_detected_at, last_seen_at]
       properties:
         id:
           type: string
