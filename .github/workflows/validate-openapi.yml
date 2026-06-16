@@ -23,7 +23,7 @@ jobs:
           node-version: '20'
 
       - name: Install Spectral
-        run: npm install -g @stoplight/spectral-cli
+        run: npm install -g @stoplight/spectral-cli@6.16.0
 
       - name: Lint ASM OpenAPI spec
         if: ${{ hashFiles('asm/openapi.yaml') != '' }}
