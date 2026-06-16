@@ -97,6 +97,29 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/Asset'
+              example:
+                meta:
+                  total: 142
+                  page: 1
+                  per_page: 25
+                data:
+                  - id: ast_1a2b3c4d5e6f0001
+                    type: subdomain
+                    value: api.acmecorp.com
+                    status: active
+                    first_seen_at: '2024-01-15T08:00:00Z'
+                    last_seen_at: '2024-06-10T12:34:56Z'
+                    tags:
+                      - id: tag_0001aabbccdd0001
+                        name: production
+                        color: '#2a9d8f'
+                        created_at: '2024-01-01T00:00:00Z'
+                    open_vulnerability_counts:
+                      critical: 0
+                      high: 1
+                      medium: 3
+                      low: 7
+                      informational: 12
         '401':
           $ref: '#/components/responses/Unauthorized'
         '429':
@@ -117,6 +140,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AssetDetail'
+              example:
+                id: ast_1a2b3c4d5e6f0001
+                type: subdomain
+                value: api.acmecorp.com
+                status: active
+                first_seen_at: '2024-01-15T08:00:00Z'
+                last_seen_at: '2024-06-10T12:34:56Z'
+                tags:
+                  - id: tag_0001aabbccdd0001
+                    name: production
+                    color: '#2a9d8f'
+                    created_at: '2024-01-01T00:00:00Z'
+                open_vulnerability_counts:
+                  critical: 0
+                  high: 1
+                  medium: 3
+                  low: 7
+                  informational: 12
+                owner: platform-team@acmecorp.com
+                notes: Primary API gateway. Managed by Platform team.
+                open_ports:
+                  - port: 443
+                    protocol: tcp
+                    service: https
+                    banner: nginx/1.24.0
+                  - port: 80
+                    protocol: tcp
+                    service: http
+                    banner: nginx/1.24.0
+                certificates:
+                  - subject: CN=api.acmecorp.com
+                    issuer: CN=Let's Encrypt Authority X3
+                    not_before: '2024-03-01T00:00:00Z'
+                    not_after: '2024-06-01T00:00:00Z'
+                    expires_in_days: 45
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -139,6 +197,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AssetDetail'
+              example:
+                id: ast_1a2b3c4d5e6f0001
+                type: subdomain
+                value: api.acmecorp.com
+                status: active
+                first_seen_at: '2024-01-15T08:00:00Z'
+                last_seen_at: '2024-06-10T12:34:56Z'
+                tags:
+                  - id: tag_0001aabbccdd0001
+                    name: production
+                    color: '#2a9d8f'
+                    created_at: '2024-01-01T00:00:00Z'
+                  - id: tag_0001aabbccdd0002
+                    name: critical-asset
+                    color: '#e63946'
+                    created_at: '2024-01-15T08:30:00Z'
+                open_vulnerability_counts:
+                  critical: 0
+                  high: 1
+                  medium: 3
+                  low: 7
+                  informational: 12
+                owner: platform-team@acmecorp.com
+                notes: Primary API gateway. Updated ownership annotation.
+                open_ports:
+                  - port: 443
+                    protocol: tcp
+                    service: https
+                    banner: nginx/1.24.0
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -171,6 +258,7 @@ paths:
         - $ref: '#/components/parameters/PerPage'
         - name: status
           in: query
+          description: Filter by scan status
           schema:
             $ref: '#/components/schemas/ScanStatus'
       responses:
@@ -187,6 +275,22 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/Scan'
+              example:
+                meta:
+                  total: 8
+                  page: 1
+                  per_page: 25
+                data:
+                  - id: scn_a1b2c3d4e5f60001
+                    label: Quarterly perimeter scan
+                    status: completed
+                    scan_type: full
+                    targets:
+                      - acmecorp.com
+                      - 203.0.113.0/24
+                    created_at: '2024-06-10T12:00:00Z'
+                    started_at: '2024-06-10T12:01:00Z'
+                    completed_at: '2024-06-10T13:45:30Z'
         '401':
           $ref: '#/components/responses/Unauthorized'
     post:
@@ -209,6 +313,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Scan'
+              example:
+                id: scn_a1b2c3d4e5f60001
+                label: Quarterly perimeter scan
+                status: queued
+                scan_type: full
+                targets:
+                  - acmecorp.com
+                  - 203.0.113.0/24
+                created_at: '2024-06-10T12:00:00Z'
+                started_at: null
+                completed_at: null
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -237,6 +352,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ScanDetail'
+              example:
+                id: scn_a1b2c3d4e5f60001
+                label: Quarterly perimeter scan
+                status: completed
+                scan_type: full
+                targets:
+                  - acmecorp.com
+                  - 203.0.113.0/24
+                created_at: '2024-06-10T12:00:00Z'
+                started_at: '2024-06-10T12:01:00Z'
+                completed_at: '2024-06-10T13:45:30Z'
+                summary:
+                  assets_discovered: 14
+                  assets_updated: 87
+                  vulnerabilities_found: 23
+                  vulnerabilities_by_severity:
+                    critical: 1
+                    high: 3
+                    medium: 9
+                    low: 8
+                    informational: 2
+                error_message: null
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -290,6 +427,22 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/Vulnerability'
+              example:
+                meta:
+                  total: 87
+                  page: 1
+                  per_page: 25
+                data:
+                  - id: vln_x9y8z7w6v5u40001
+                    asset_id: ast_1a2b3c4d5e6f0001
+                    title: Apache Log4j Remote Code Execution (Log4Shell)
+                    severity: critical
+                    status: open
+                    cvss_score: 10.0
+                    cve_ids:
+                      - CVE-2021-44228
+                    first_detected_at: '2024-01-20T09:15:00Z'
+                    last_seen_at: '2024-06-10T12:34:56Z'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -314,6 +467,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VulnerabilityDetail'
+              example:
+                id: vln_x9y8z7w6v5u40001
+                asset_id: ast_1a2b3c4d5e6f0001
+                title: Apache Log4j Remote Code Execution (Log4Shell)
+                severity: critical
+                status: in_progress
+                cvss_score: 10.0
+                cve_ids:
+                  - CVE-2021-44228
+                first_detected_at: '2024-01-20T09:15:00Z'
+                last_seen_at: '2024-06-10T12:34:56Z'
+                description: A critical remote code execution vulnerability in Apache Log4j 2.x when processing attacker-controlled JNDI lookups.
+                remediation: "1. Upgrade log4j-core to 2.17.1 or later.\n2. If upgrade is not immediately possible, set system property log4j2.formatMsgNoLookups=true.\n3. Remove JndiLookup class from the classpath."
+                references:
+                  - 'https://nvd.nist.gov/vuln/detail/CVE-2021-44228'
+                  - 'https://logging.apache.org/log4j/2.x/security.html'
+                affected_component: log4j-core 2.14.1
+                evidence: "HTTP/1.1 200 OK\nX-Powered-By: log4j/2.14.1"
+                notes: Patch scheduled for next maintenance window.
+                history:
+                  - changed_at: '2024-01-21T10:00:00Z'
+                    changed_by: alice@acmecorp.com
+                    from_status: open
+                    to_status: in_progress
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -336,6 +513,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VulnerabilityDetail'
+              example:
+                id: vln_x9y8z7w6v5u40001
+                asset_id: ast_1a2b3c4d5e6f0001
+                title: Apache Log4j Remote Code Execution (Log4Shell)
+                severity: critical
+                status: accepted_risk
+                cvss_score: 10.0
+                cve_ids:
+                  - CVE-2021-44228
+                first_detected_at: '2024-01-20T09:15:00Z'
+                last_seen_at: '2024-06-10T12:34:56Z'
+                description: A critical remote code execution vulnerability in Apache Log4j 2.x when processing attacker-controlled JNDI lookups.
+                remediation: "1. Upgrade log4j-core to 2.17.1 or later.\n2. If upgrade is not immediately possible, set system property log4j2.formatMsgNoLookups=true.\n3. Remove JndiLookup class from the classpath."
+                references:
+                  - 'https://nvd.nist.gov/vuln/detail/CVE-2021-44228'
+                affected_component: log4j-core 2.14.1
+                evidence: "HTTP/1.1 200 OK\nX-Powered-By: log4j/2.14.1"
+                notes: Risk accepted by CISO for legacy system pending migration.
+                history:
+                  - changed_at: '2024-01-21T10:00:00Z'
+                    changed_by: alice@acmecorp.com
+                    from_status: open
+                    to_status: in_progress
+                  - changed_at: '2024-06-10T15:00:00Z'
+                    changed_by: bob@acmecorp.com
+                    from_status: in_progress
+                    to_status: accepted_risk
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -347,6 +551,7 @@ paths:
     get:
       operationId: listTags
       summary: List tags
+      description: Returns all tags defined in the tenant.
       tags: [Tags]
       responses:
         '200':
@@ -360,11 +565,22 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Tag'
+              example:
+                data:
+                  - id: tag_0001aabbccdd0001
+                    name: production
+                    color: '#2a9d8f'
+                    created_at: '2024-01-01T00:00:00Z'
+                  - id: tag_0001aabbccdd0002
+                    name: critical-asset
+                    color: '#e63946'
+                    created_at: '2024-01-15T08:30:00Z'
         '401':
           $ref: '#/components/responses/Unauthorized'
     post:
       operationId: createTag
       summary: Create tag
+      description: Creates a new organizational tag. Tag names must be unique within a tenant.
       tags: [Tags]
       requestBody:
         required: true
@@ -388,6 +604,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Tag'
+              example:
+                id: tag_0001aabbccdd0003
+                name: staging
+                color: '#f4a261'
+                created_at: '2024-06-10T14:00:00Z'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
