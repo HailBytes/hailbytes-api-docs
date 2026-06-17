@@ -696,8 +696,7 @@ components:
           readOnly: true
           example: scn_a1b2c3d4e5f60001
         label:
-          type: string
-          nullable: true
+          type: [string, 'null']
         status:
           $ref: '#/components/schemas/ScanStatus'
         scan_type:
@@ -712,14 +711,12 @@ components:
           format: date-time
           readOnly: true
         started_at:
-          type: string
+          type: [string, 'null']
           format: date-time
-          nullable: true
           readOnly: true
         completed_at:
-          type: string
+          type: [string, 'null']
           format: date-time
-          nullable: true
           readOnly: true
 
     ScanDetail:
@@ -751,8 +748,7 @@ components:
                     informational:
                       type: integer
             error_message:
-              type: string
-              nullable: true
+              type: [string, 'null']
               description: Set when status is `failed`
 
     # ── Vulnerabilities ────────────────────────────────────────────────────────
@@ -776,11 +772,10 @@ components:
         status:
           $ref: '#/components/schemas/VulnStatus'
         cvss_score:
-          type: number
+          type: [number, 'null']
           format: float
           minimum: 0
           maximum: 10
-          nullable: true
           example: 10.0
         cve_ids:
           type: array
