@@ -347,6 +347,7 @@ paths:
     get:
       operationId: listTags
       summary: List tags
+      description: Returns all tags defined in the tenant.
       tags: [Tags]
       responses:
         '200':
@@ -365,6 +366,7 @@ paths:
     post:
       operationId: createTag
       summary: Create tag
+      description: Creates a new tag that can be applied to assets.
       tags: [Tags]
       requestBody:
         required: true
@@ -392,6 +394,64 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /tags/{tag_id}:
+    parameters:
+      - $ref: '#/components/parameters/TagId'
+    get:
+      operationId: getTag
+      summary: Get tag
+      description: Returns a single tag by ID.
+      tags: [Tags]
+      responses:
+        '200':
+          description: Tag detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateTag
+      summary: Update tag
+      description: Update the name or color of a tag.
+      tags: [Tags]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagUpdate'
+      responses:
+        '200':
+          description: Updated tag
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteTag
+      summary: Delete tag
+      description: |
+        Permanently deletes a tag and removes it from all assets it was
+        applied to. This action cannot be undone.
+      tags: [Tags]
+      responses:
+        '204':
+          description: Tag deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
 components:
   securitySchemes:
@@ -426,6 +486,14 @@ components:
         type: string
         pattern: '^ast_[a-z0-9]{16}$'
       example: ast_1a2b3c4d5e6f0001
+    TagId:
+      name: tag_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^tag_[a-z0-9]{16}$'
+      example: tag_0001aabbccdd0001
 
   responses:
     Unauthorized:
@@ -547,6 +615,17 @@ components:
           type: string
           format: date-time
           readOnly: true
+
+    TagUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 64
+        color:
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+          example: '#e63946'
 
     # ── Assets ─────────────────────────────────────────────────────────────────
 
