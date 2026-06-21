@@ -1,0 +1,1365 @@
+openapi: 3.1.0
+
+info:
+  title: HailBytes SAT API
+  version: 1.0.0
+  description: |
+    REST API for **HailBytes Security Awareness Training (SAT)** — manage users,
+    groups, training campaigns, phishing simulations, and compliance reporting.
+
+    ## Authentication
+    All endpoints require a Bearer token issued from the HailBytes dashboard.
+    Pass it in the `Authorization` header:
+    ```
+    Authorization: Bearer <your-api-key>
+    ```
+
+    ## Pagination
+    List endpoints return paginated results. Use the `page` and `per_page` query
+    parameters to navigate pages. The response envelope includes `meta.total`,
+    `meta.page`, and `meta.per_page`.
+
+    ## Rate Limiting
+    Requests are limited to **600 per minute** per API key. The current limit
+    and remaining quota are returned in `X-RateLimit-Limit` and
+    `X-RateLimit-Remaining` response headers.
+  contact:
+    name: HailBytes Support
+    email: support@hailbytes.com
+    url: https://hailbytes.com/docs
+  license:
+    name: Mozilla Public License 2.0
+    url: https://opensource.org/licenses/MPL-2.0
+
+servers:
+  - url: https://api.hailbytes.com/sat/v1
+    description: Production
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Users
+    description: Training participants and their account details
+  - name: Groups
+    description: Organizational groups for bulk campaign targeting
+  - name: Campaigns
+    description: Security awareness training campaigns
+  - name: Simulations
+    description: Phishing simulations sent to users
+  - name: Enrollments
+    description: User–campaign assignment and progress tracking
+  - name: Reports
+    description: Compliance and phishing simulation aggregate reports
+
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      summary: List users
+      description: Returns a paginated list of all training participants in the tenant.
+      tags: [Users]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - name: group_id
+          in: query
+          description: Filter by group
+          schema:
+            type: string
+            pattern: '^grp_[a-z0-9]{16}$'
+        - name: status
+          in: query
+          description: Filter by user status
+          schema:
+            $ref: '#/components/schemas/UserStatus'
+        - name: q
+          in: query
+          description: Full-text search by name or email
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated list of users
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedMeta'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      operationId: createUser
+      summary: Enroll a user
+      description: Creates a new training participant. Returns 409 if the email is already registered.
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: User enrolled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: conflict
+                  message: A user with this email already exists
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /users/{user_id}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      operationId: getUser
+      summary: Get user
+      description: Returns a single user with training statistics.
+      tags: [Users]
+      responses:
+        '200':
+          description: User detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    patch:
+      operationId: updateUser
+      summary: Update user
+      description: Update mutable fields on a user (name, group, status).
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    delete:
+      operationId: deleteUser
+      summary: Remove user
+      description: |
+        Permanently removes a user and all associated enrollments. This action
+        cannot be undone. Completed training history is retained in reports.
+      tags: [Users]
+      responses:
+        '204':
+          description: User removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /groups:
+    get:
+      operationId: listGroups
+      summary: List groups
+      description: Returns a paginated list of all groups in the tenant.
+      tags: [Groups]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - name: q
+          in: query
+          description: Filter by group name (substring match)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated list of groups
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedMeta'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Group'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      operationId: createGroup
+      summary: Create group
+      tags: [Groups]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  maxLength: 128
+                  example: Engineering
+                description:
+                  type: string
+                  maxLength: 512
+                  nullable: true
+                  example: Engineering department
+      responses:
+        '201':
+          description: Group created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /groups/{group_id}:
+    parameters:
+      - $ref: '#/components/parameters/GroupId'
+    get:
+      operationId: getGroup
+      summary: Get group
+      description: Returns a single group with aggregate training statistics for its members.
+      tags: [Groups]
+      responses:
+        '200':
+          description: Group detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    patch:
+      operationId: updateGroup
+      summary: Update group
+      tags: [Groups]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 128
+                description:
+                  type: string
+                  maxLength: 512
+                  nullable: true
+      responses:
+        '200':
+          description: Updated group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    delete:
+      operationId: deleteGroup
+      summary: Delete group
+      description: |
+        Deletes a group. Users in the group are not deleted; their `group_id`
+        is set to null.
+      tags: [Groups]
+      responses:
+        '204':
+          description: Group deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /campaigns:
+    get:
+      operationId: listCampaigns
+      summary: List campaigns
+      description: Returns a paginated list of all training campaigns ordered by creation date descending.
+      tags: [Campaigns]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - name: status
+          in: query
+          description: Filter by campaign status
+          schema:
+            $ref: '#/components/schemas/CampaignStatus'
+      responses:
+        '200':
+          description: Paginated list of campaigns
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedMeta'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Campaign'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      operationId: createCampaign
+      summary: Create campaign
+      tags: [Campaigns]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignCreate'
+      responses:
+        '201':
+          description: Campaign created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /campaigns/{campaign_id}:
+    parameters:
+      - $ref: '#/components/parameters/CampaignId'
+    get:
+      operationId: getCampaign
+      summary: Get campaign
+      description: Returns campaign detail including enrollment statistics.
+      tags: [Campaigns]
+      responses:
+        '200':
+          description: Campaign detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    patch:
+      operationId: updateCampaign
+      summary: Update campaign
+      description: Update mutable fields on a campaign. A `completed` or `archived` campaign cannot be reactivated.
+      tags: [Campaigns]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignUpdate'
+      responses:
+        '200':
+          description: Updated campaign
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /simulations:
+    get:
+      operationId: listSimulations
+      summary: List simulations
+      description: Returns a paginated list of phishing simulations ordered by creation date descending.
+      tags: [Simulations]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - name: status
+          in: query
+          description: Filter by simulation status
+          schema:
+            $ref: '#/components/schemas/SimulationStatus'
+        - name: campaign_id
+          in: query
+          description: Scope to a specific campaign
+          schema:
+            type: string
+            pattern: '^cmp_[a-z0-9]{16}$'
+      responses:
+        '200':
+          description: Paginated list of simulations
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedMeta'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Simulation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      operationId: launchSimulation
+      summary: Launch simulation
+      description: |
+        Enqueues a new phishing simulation. The simulation runs asynchronously;
+        poll `GET /simulations/{simulation_id}` or subscribe to webhooks to
+        track delivery and click metrics.
+      tags: [Simulations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulationCreate'
+      responses:
+        '202':
+          description: Simulation accepted and queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Simulation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /simulations/{simulation_id}:
+    parameters:
+      - $ref: '#/components/parameters/SimulationId'
+    get:
+      operationId: getSimulation
+      summary: Get simulation
+      description: Returns the current state and delivery/click metrics for a simulation.
+      tags: [Simulations]
+      responses:
+        '200':
+          description: Simulation detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /enrollments:
+    get:
+      operationId: listEnrollments
+      summary: List enrollments
+      description: Returns a paginated list of user–campaign enrollments.
+      tags: [Enrollments]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - name: user_id
+          in: query
+          description: Filter by user
+          schema:
+            type: string
+            pattern: '^usr_[a-z0-9]{16}$'
+        - name: campaign_id
+          in: query
+          description: Filter by campaign
+          schema:
+            type: string
+            pattern: '^cmp_[a-z0-9]{16}$'
+        - name: status
+          in: query
+          description: Filter by enrollment status
+          schema:
+            $ref: '#/components/schemas/EnrollmentStatus'
+      responses:
+        '200':
+          description: Paginated list of enrollments
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedMeta'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Enrollment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      operationId: createEnrollment
+      summary: Enroll user in campaign
+      description: Assigns a user to a training campaign. Returns 409 if the user is already enrolled.
+      tags: [Enrollments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrollmentCreate'
+      responses:
+        '201':
+          description: Enrollment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Enrollment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: User or campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: User already enrolled in this campaign
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: conflict
+                  message: User is already enrolled in this campaign
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /reports/compliance:
+    get:
+      operationId: getComplianceReport
+      summary: Get compliance report
+      description: |
+        Returns a point-in-time compliance summary showing completion rates across
+        users and groups. Optionally scoped to a specific group or campaign.
+      tags: [Reports]
+      parameters:
+        - name: group_id
+          in: query
+          description: Scope to a specific group
+          schema:
+            type: string
+            pattern: '^grp_[a-z0-9]{16}$'
+        - name: campaign_id
+          in: query
+          description: Scope to a specific campaign
+          schema:
+            type: string
+            pattern: '^cmp_[a-z0-9]{16}$'
+        - name: as_of
+          in: query
+          description: Snapshot date for the report (ISO 8601 date). Defaults to today.
+          schema:
+            type: string
+            format: date
+            example: '2025-03-31'
+      responses:
+        '200':
+          description: Compliance summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /reports/phishing:
+    get:
+      operationId: getPhishingReport
+      summary: Get phishing report
+      description: |
+        Returns aggregate click-rate and report-rate metrics across all phishing
+        simulations in the specified time window. Includes a month-by-month trend
+        series for tracking improvement over time.
+      tags: [Reports]
+      parameters:
+        - name: group_id
+          in: query
+          description: Scope to a specific group
+          schema:
+            type: string
+            pattern: '^grp_[a-z0-9]{16}$'
+        - name: since
+          in: query
+          description: Start of reporting window (ISO 8601 date-time)
+          schema:
+            type: string
+            format: date-time
+        - name: until
+          in: query
+          description: End of reporting window (ISO 8601 date-time)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Aggregated phishing simulation metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhishingReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API key from the HailBytes dashboard
+
+  parameters:
+    Page:
+      name: page
+      in: query
+      description: Page number (1-indexed)
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PerPage:
+      name: per_page
+      in: query
+      description: Results per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+    UserId:
+      name: user_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^usr_[a-z0-9]{16}$'
+      example: usr_a1b2c3d4e5f60001
+    GroupId:
+      name: group_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^grp_[a-z0-9]{16}$'
+      example: grp_a1b2c3d4e5f60001
+    CampaignId:
+      name: campaign_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^cmp_[a-z0-9]{16}$'
+      example: cmp_a1b2c3d4e5f60001
+    SimulationId:
+      name: simulation_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^sim_[a-z0-9]{16}$'
+      example: sim_a1b2c3d4e5f60001
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: unauthorized
+              message: Invalid or missing Bearer token
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: not_found
+              message: The requested resource does not exist
+    BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    RateLimited:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the rate limit window resets
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    # ── Enums ──────────────────────────────────────────────────────────────────
+
+    UserStatus:
+      type: string
+      enum: [active, inactive, suspended]
+
+    CampaignStatus:
+      type: string
+      enum: [draft, active, completed, archived]
+
+    SimulationStatus:
+      type: string
+      enum: [queued, running, completed, cancelled]
+
+    EnrollmentStatus:
+      type: string
+      enum: [enrolled, in_progress, completed, overdue, failed]
+
+    # ── Shared ─────────────────────────────────────────────────────────────────
+
+    PaginatedMeta:
+      type: object
+      properties:
+        meta:
+          type: object
+          properties:
+            total:
+              type: integer
+              description: Total number of results across all pages
+            page:
+              type: integer
+            per_page:
+              type: integer
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+
+    # ── Users ──────────────────────────────────────────────────────────────────
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: usr_a1b2c3d4e5f60001
+        email:
+          type: string
+          format: email
+          example: alice@example.com
+        first_name:
+          type: string
+          nullable: true
+          example: Alice
+        last_name:
+          type: string
+          nullable: true
+          example: Smith
+        group_id:
+          type: string
+          nullable: true
+          example: grp_a1b2c3d4e5f60001
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    UserDetail:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            enrollments_count:
+              type: integer
+              description: Number of active enrollments
+              readOnly: true
+              example: 3
+            completions_count:
+              type: integer
+              description: Number of completed training campaigns
+              readOnly: true
+              example: 7
+            phish_prone_percentage:
+              type: number
+              format: float
+              description: Percentage of phishing simulations the user clicked on
+              readOnly: true
+              example: 15.5
+
+    UserCreate:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          example: alice@example.com
+        first_name:
+          type: string
+          example: Alice
+        last_name:
+          type: string
+          example: Smith
+        group_id:
+          type: string
+          pattern: '^grp_[a-z0-9]{16}$'
+          nullable: true
+          example: grp_a1b2c3d4e5f60001
+
+    UserUpdate:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        group_id:
+          type: string
+          pattern: '^grp_[a-z0-9]{16}$'
+          nullable: true
+        status:
+          $ref: '#/components/schemas/UserStatus'
+
+    # ── Groups ─────────────────────────────────────────────────────────────────
+
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: grp_a1b2c3d4e5f60001
+        name:
+          type: string
+          example: Engineering
+        description:
+          type: string
+          nullable: true
+          example: Engineering department
+        member_count:
+          type: integer
+          readOnly: true
+          description: Number of users currently in this group
+          example: 42
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    GroupDetail:
+      allOf:
+        - $ref: '#/components/schemas/Group'
+        - type: object
+          properties:
+            completion_rate:
+              type: number
+              format: float
+              description: Average training completion rate across members
+              readOnly: true
+              example: 78.3
+            phish_prone_percentage:
+              type: number
+              format: float
+              description: Average phish-prone percentage across members
+              readOnly: true
+              example: 12.1
+
+    # ── Campaigns ──────────────────────────────────────────────────────────────
+
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: cmp_a1b2c3d4e5f60001
+        name:
+          type: string
+          example: Q1 2025 Security Awareness Training
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/CampaignStatus'
+        start_date:
+          type: string
+          format: date
+          nullable: true
+          example: '2025-01-01'
+        end_date:
+          type: string
+          format: date
+          nullable: true
+          example: '2025-03-31'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    CampaignDetail:
+      allOf:
+        - $ref: '#/components/schemas/Campaign'
+        - type: object
+          properties:
+            enrolled_count:
+              type: integer
+              description: Total users enrolled
+              readOnly: true
+              example: 200
+            completed_count:
+              type: integer
+              description: Users who completed all modules
+              readOnly: true
+              example: 147
+            completion_rate:
+              type: number
+              format: float
+              description: Completion percentage (0–100)
+              readOnly: true
+              example: 73.5
+            overdue_count:
+              type: integer
+              description: Users past the campaign end date without completing
+              readOnly: true
+              example: 12
+
+    CampaignCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 256
+          example: Q1 2025 Security Awareness Training
+        description:
+          type: string
+          maxLength: 4096
+          nullable: true
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        end_date:
+          type: string
+          format: date
+          nullable: true
+
+    CampaignUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 256
+        description:
+          type: string
+          maxLength: 4096
+          nullable: true
+        status:
+          $ref: '#/components/schemas/CampaignStatus'
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        end_date:
+          type: string
+          format: date
+          nullable: true
+
+    # ── Simulations ────────────────────────────────────────────────────────────
+
+    Simulation:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: sim_a1b2c3d4e5f60001
+        name:
+          type: string
+          example: Credential Harvesting Test — March 2025
+        campaign_id:
+          type: string
+          nullable: true
+          example: cmp_a1b2c3d4e5f60001
+        template_id:
+          type: string
+          description: Phishing email template identifier
+          example: tmpl_credential_harvest_v2
+        status:
+          $ref: '#/components/schemas/SimulationStatus'
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Delivery time; null if sent immediately
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+
+    SimulationDetail:
+      allOf:
+        - $ref: '#/components/schemas/Simulation'
+        - type: object
+          properties:
+            recipient_count:
+              type: integer
+              description: Total recipients targeted
+              readOnly: true
+              example: 150
+            delivered_count:
+              type: integer
+              description: Emails successfully delivered
+              readOnly: true
+              example: 148
+            opened_count:
+              type: integer
+              description: Emails opened by recipients
+              readOnly: true
+              example: 87
+            clicked_count:
+              type: integer
+              description: Phishing links clicked
+              readOnly: true
+              example: 23
+            reported_count:
+              type: integer
+              description: Emails reported as suspicious by recipients
+              readOnly: true
+              example: 41
+            click_rate:
+              type: number
+              format: float
+              description: Percentage of recipients who clicked the phishing link
+              readOnly: true
+              example: 15.5
+            report_rate:
+              type: number
+              format: float
+              description: Percentage of recipients who reported the simulation email
+              readOnly: true
+              example: 27.7
+
+    SimulationCreate:
+      type: object
+      required: [name, template_id, group_id]
+      properties:
+        name:
+          type: string
+          maxLength: 256
+          example: Credential Harvesting Test — March 2025
+        template_id:
+          type: string
+          description: Identifier of the phishing email template to use
+          example: tmpl_credential_harvest_v2
+        group_id:
+          type: string
+          pattern: '^grp_[a-z0-9]{16}$'
+          description: Target group for this simulation
+          example: grp_a1b2c3d4e5f60001
+        campaign_id:
+          type: string
+          pattern: '^cmp_[a-z0-9]{16}$'
+          nullable: true
+          description: Optional campaign to associate this simulation with
+          example: cmp_a1b2c3d4e5f60001
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Schedule for future delivery. Omit to send immediately.
+
+    # ── Enrollments ────────────────────────────────────────────────────────────
+
+    Enrollment:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: enr_a1b2c3d4e5f60001
+        user_id:
+          type: string
+          readOnly: true
+          example: usr_a1b2c3d4e5f60001
+        campaign_id:
+          type: string
+          readOnly: true
+          example: cmp_a1b2c3d4e5f60001
+        status:
+          $ref: '#/components/schemas/EnrollmentStatus'
+        progress_percent:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Training completion percentage
+          example: 60
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          example: '2025-03-31'
+        enrolled_at:
+          type: string
+          format: date-time
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+
+    EnrollmentCreate:
+      type: object
+      required: [user_id, campaign_id]
+      properties:
+        user_id:
+          type: string
+          pattern: '^usr_[a-z0-9]{16}$'
+          example: usr_a1b2c3d4e5f60001
+        campaign_id:
+          type: string
+          pattern: '^cmp_[a-z0-9]{16}$'
+          example: cmp_a1b2c3d4e5f60001
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          example: '2025-03-31'
+
+    # ── Reports ────────────────────────────────────────────────────────────────
+
+    ComplianceReport:
+      type: object
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        as_of:
+          type: string
+          format: date
+          example: '2025-03-31'
+        group_id:
+          type: string
+          nullable: true
+        campaign_id:
+          type: string
+          nullable: true
+        total_users:
+          type: integer
+          example: 200
+        compliant_users:
+          type: integer
+          description: Users who completed all required training
+          example: 165
+        compliance_rate:
+          type: number
+          format: float
+          description: Percentage of users meeting the completion threshold
+          example: 82.5
+        overdue_users:
+          type: integer
+          description: Users past their due date without completion
+          example: 12
+        breakdown:
+          type: array
+          description: Per-group compliance breakdown
+          items:
+            type: object
+            properties:
+              group_id:
+                type: string
+              group_name:
+                type: string
+              total:
+                type: integer
+              compliant:
+                type: integer
+              rate:
+                type: number
+                format: float
+
+    PhishingReport:
+      type: object
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        group_id:
+          type: string
+          nullable: true
+        since:
+          type: string
+          format: date-time
+          nullable: true
+        until:
+          type: string
+          format: date-time
+          nullable: true
+        total_simulations:
+          type: integer
+          example: 8
+        total_recipients:
+          type: integer
+          example: 1200
+        aggregate_click_rate:
+          type: number
+          format: float
+          description: Overall phish-prone percentage across all simulations in the window
+          example: 14.2
+        aggregate_report_rate:
+          type: number
+          format: float
+          description: Percentage of recipients who reported simulation emails
+          example: 26.8
+        trend:
+          type: array
+          description: Month-by-month click rate trend
+          items:
+            type: object
+            properties:
+              month:
+                type: string
+                description: Year-month in YYYY-MM format
+                example: '2025-01'
+              click_rate:
+                type: number
+                format: float
+              recipients:
+                type: integer
