@@ -86,6 +86,11 @@ paths:
       responses:
         '200':
           description: Paginated list of assets
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/X-RateLimit-Remaining'
           content:
             application/json:
               schema:
@@ -113,6 +118,11 @@ paths:
       responses:
         '200':
           description: Asset detail
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/X-RateLimit-Remaining'
           content:
             application/json:
               schema:
@@ -135,6 +145,11 @@ paths:
       responses:
         '200':
           description: Updated asset
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/X-RateLimit-Remaining'
           content:
             application/json:
               schema:
@@ -155,6 +170,11 @@ paths:
       responses:
         '204':
           description: Asset archived
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/X-RateLimit-Remaining'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -176,6 +196,11 @@ paths:
       responses:
         '200':
           description: Paginated list of scans
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/X-RateLimit-Remaining'
           content:
             application/json:
               schema:
@@ -205,6 +230,11 @@ paths:
       responses:
         '202':
           description: Scan accepted and queued
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/X-RateLimit-Remaining'
           content:
             application/json:
               schema:
@@ -233,6 +263,11 @@ paths:
       responses:
         '200':
           description: Scan detail
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/X-RateLimit-Remaining'
           content:
             application/json:
               schema:
@@ -279,6 +314,11 @@ paths:
       responses:
         '200':
           description: Paginated list of vulnerability findings
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/X-RateLimit-Remaining'
           content:
             application/json:
               schema:
@@ -310,6 +350,11 @@ paths:
       responses:
         '200':
           description: Vulnerability detail
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/X-RateLimit-Remaining'
           content:
             application/json:
               schema:
@@ -332,6 +377,11 @@ paths:
       responses:
         '200':
           description: Updated vulnerability
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/X-RateLimit-Remaining'
           content:
             application/json:
               schema:
@@ -351,6 +401,11 @@ paths:
       responses:
         '200':
           description: All tags in the tenant
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/X-RateLimit-Remaining'
           content:
             application/json:
               schema:
@@ -384,6 +439,11 @@ paths:
       responses:
         '201':
           description: Tag created
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/X-RateLimit-Remaining'
           content:
             application/json:
               schema:
@@ -394,6 +454,18 @@ paths:
           $ref: '#/components/responses/Unauthorized'
 
 components:
+  headers:
+    X-RateLimit-Limit:
+      description: Maximum number of requests allowed per minute for the current API key.
+      schema:
+        type: integer
+        example: 600
+    X-RateLimit-Remaining:
+      description: Number of requests remaining in the current rate-limit window.
+      schema:
+        type: integer
+        example: 543
+
   securitySchemes:
     bearerAuth:
       type: http
