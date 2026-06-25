@@ -121,6 +121,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
     patch:
       operationId: updateAsset
       summary: Update asset
@@ -145,6 +147,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
     delete:
       operationId: deleteAsset
       summary: Archive asset
@@ -159,6 +163,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /scans:
     get:
@@ -189,6 +195,8 @@ paths:
                           $ref: '#/components/schemas/Scan'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
     post:
       operationId: triggerScan
       summary: Trigger scan
@@ -241,6 +249,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /vulnerabilities:
     get:
@@ -292,6 +302,8 @@ paths:
                           $ref: '#/components/schemas/Vulnerability'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /vulnerabilities/{vuln_id}:
     parameters:
@@ -318,6 +330,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
     patch:
       operationId: updateVulnerability
       summary: Update vulnerability
@@ -342,6 +356,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /tags:
     get:
@@ -362,6 +378,8 @@ paths:
                       $ref: '#/components/schemas/Tag'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
     post:
       operationId: createTag
       summary: Create tag
@@ -392,6 +410,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
 components:
   securitySchemes:
@@ -454,6 +474,13 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: validation_error
+              message: Request body contains invalid fields
+              details:
+                - field: tags[0]
+                  message: Tag name must not exceed 64 characters
     RateLimited:
       description: Rate limit exceeded
       headers:
@@ -465,6 +492,10 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: rate_limit_exceeded
+              message: API rate limit of 600 requests per minute exceeded
 
   schemas:
     # ── Enums ──────────────────────────────────────────────────────────────────
