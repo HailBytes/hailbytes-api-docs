@@ -26,7 +26,7 @@ This repository contains the complete API reference, OpenAPI 3.1 specifications,
 | Path | Description |
 |------|-------------|
 | `asm/openapi.yaml` | OpenAPI 3.1 spec for the ASM REST API |
-| `sat/openapi.yaml` | OpenAPI 3.1 spec for the SAT REST API *(coming soon)* |
+| `sat/openapi.yaml` | OpenAPI 3.0 spec for the SAT REST API |
 | `mcp/` | MCP server definitions for ASM and SAT tool integrations *(coming soon)* |
 | `guides/` | Integration guides (SIEM, ticketing, MSSP multi-tenant) *(coming soon)* |
 | `sdk/` | SDK examples (Python, Go, TypeScript) *(coming soon)* |

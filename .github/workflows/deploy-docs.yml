@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'asm/openapi.yaml'
+      - 'sat/openapi.yaml'
       - 'docs/**'
       - '.github/workflows/deploy-docs.yml'
   workflow_dispatch:
@@ -33,6 +34,7 @@ jobs:
           mkdir -p _site
           cp docs/index.html _site/index.html
           cp asm/openapi.yaml _site/asm-openapi.yaml
+          cp sat/openapi.yaml _site/sat-openapi.yaml
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

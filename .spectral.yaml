@@ -1,0 +1,13 @@
+# Spectral ruleset for the HailBytes API documentation specs.
+#
+# Extends the built-in OpenAPI ruleset. Note that `--ruleset spectral:oas`
+# is NOT a valid CLI reference in spectral-cli 6.x — the built-in ruleset
+# must be referenced from a ruleset file via `extends`, which is what this
+# file provides. The validate-openapi.yml workflow points at this file.
+#
+# Gating philosophy mirrors the hailbytes-sat repo: error-severity findings
+# block; warnings are advisory. This lets the specs stay faithful to the
+# real APIs — e.g. the SAT API genuinely uses trailing-slash paths
+# (`/campaigns/`), which trips the advisory `path-keys-no-trailing-slash`
+# rule but is correct.
+extends: ["spectral:oas"]

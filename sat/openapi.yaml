@@ -1,0 +1,1576 @@
+openapi: 3.0.3
+info:
+  title: HailBytes SAT API
+  version: "1.0"
+  description: |
+    HailBytes SAT is an open-source phishing simulation platform. This API allows
+    operators to create and manage campaigns, email templates, landing pages,
+    target groups, and sending profiles programmatically.
+
+    ## Authentication
+    All API endpoints (except `/api/health` and `/api/ready`) require an API
+    key passed via the `Authorization: Bearer <api-key>` request header.
+
+    ## Versioning
+    The current API is unversioned (paths begin with `/api/`). A versioned
+    alias at `/api/v1/` mirrors all endpoints for forward compatibility. New
+    endpoints introduced after this release will be added under `/api/v1/`.
+
+    ## Permissions
+    Endpoints are gated by role-based permissions. See the `/api/roles/`
+    endpoint to enumerate available roles and their permissions.
+
+  contact:
+    name: HailBytes SAT
+    url: https://github.com/HailBytes/hailbytes-sat
+    email: support@hailbytes.com
+  license:
+    name: Elastic License 2.0
+    url: https://github.com/HailBytes/hailbytes-sat/blob/main/LICENSE
+
+servers:
+  - url: /api
+    description: HailBytes SAT API (admin server)
+
+security:
+  - ApiKeyAuth: []
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: hailbytes-sat-api-key
+
+  schemas:
+    Response:
+      type: object
+      properties:
+        message:
+          type: string
+        success:
+          type: boolean
+      required: [message, success]
+
+    CampaignStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        sent:
+          type: integer
+        opened:
+          type: integer
+        clicked:
+          type: integer
+        submitted_data:
+          type: integer
+        email_reported:
+          type: integer
+        error:
+          type: integer
+
+    CampaignSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        created_date:
+          type: string
+          format: date-time
+        launch_date:
+          type: string
+          format: date-time
+        send_by_date:
+          type: string
+          format: date-time
+        completed_date:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [Created, Queued, "In progress", "Emails Sent", Completed, Draft, "In Review", Approved]
+        stats:
+          $ref: '#/components/schemas/CampaignStats'
+
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        created_date:
+          type: string
+          format: date-time
+        launch_date:
+          type: string
+          format: date-time
+        send_by_date:
+          type: string
+          format: date-time
+        send_window_start:
+          type: string
+          format: date-time
+          description: >
+            Start of the randomized send window. When both start and end are
+            set, sends are distributed uniformly at random across the window,
+            overriding the linear send_by_date stagger.
+        send_window_end:
+          type: string
+          format: date-time
+          description: End of the randomized send window. Must be strictly after send_window_start.
+        jitter_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+          description: >
+            Uniformly-random +/- offset (in seconds) applied to each scheduled
+            send time. Zero disables jitter.
+        completed_date:
+          type: string
+          format: date-time
+        status:
+          type: string
+        template:
+          $ref: '#/components/schemas/TemplateRef'
+        page:
+          $ref: '#/components/schemas/PageRef'
+        smtp:
+          $ref: '#/components/schemas/SMTPRef'
+        url:
+          type: string
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupRef'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Result'
+        timeline:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+
+    CampaignCreate:
+      type: object
+      required: [name, template, page, smtp, url, groups]
+      properties:
+        name:
+          type: string
+          example: "Q1 Phishing Test"
+        template:
+          $ref: '#/components/schemas/TemplateRef'
+        page:
+          $ref: '#/components/schemas/PageRef'
+        smtp:
+          $ref: '#/components/schemas/SMTPRef'
+        url:
+          type: string
+          example: "http://phish.example.com"
+        launch_date:
+          type: string
+          format: date-time
+        send_by_date:
+          type: string
+          format: date-time
+        send_window_start:
+          type: string
+          format: date-time
+          description: >
+            Optional. Start of the randomized send window. If provided,
+            send_window_end is required and each recipient's send time is
+            picked uniformly at random inside [send_window_start,
+            send_window_end). Overrides the linear send_by_date stagger.
+        send_window_end:
+          type: string
+          format: date-time
+          description: Optional. End of the randomized send window. Must be strictly after send_window_start.
+        jitter_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+          description: >
+            Optional. Uniformly-random +/- offset (in seconds) applied to each
+            scheduled send time. Defaults to 0 (disabled).
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupRef'
+
+    TemplateRef:
+      type: object
+      properties:
+        name:
+          type: string
+
+    PageRef:
+      type: object
+      properties:
+        name:
+          type: string
+
+    SMTPRef:
+      type: object
+      properties:
+        name:
+          type: string
+
+    GroupRef:
+      type: object
+      properties:
+        name:
+          type: string
+
+    Result:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        ip:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        send_date:
+          type: string
+          format: date-time
+        reported:
+          type: boolean
+        modified_date:
+          type: string
+          format: date-time
+        email:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        position:
+          type: string
+
+    Event:
+      type: object
+      properties:
+        email:
+          type: string
+        time:
+          type: string
+          format: date-time
+        message:
+          type: string
+        details:
+          type: string
+
+    Template:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        subject:
+          type: string
+        text:
+          type: string
+        html:
+          type: string
+        attachments:
+          type: array
+          items:
+            type: object
+
+    Page:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        html:
+          type: string
+        capture_credentials:
+          type: boolean
+        capture_passwords:
+          type: boolean
+        redirect_url:
+          type: string
+
+    Group:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        modified_date:
+          type: string
+          format: date-time
+        targets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Target'
+
+    Target:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        position:
+          type: string
+
+    SMTP:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        host:
+          type: string
+        username:
+          type: string
+        from_address:
+          type: string
+        ignore_cert_errors:
+          type: boolean
+
+    Role:
+      type: object
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        db:
+          type: string
+        uptime_seconds:
+          type: number
+
+    ReadinessStatus:
+      type: object
+      properties:
+        ready:
+          type: boolean
+        db:
+          type: string
+
+    PagedResults:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        status:
+          type: string
+        total_results:
+          type: integer
+        total_events:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Result'
+        timeline:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+
+    # ── Webhook schemas ────────────────────────────────────────────────────────
+    Webhook:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          example: "Splunk forwarder"
+        url:
+          type: string
+          format: uri
+          example: "https://splunk.example.com:8088/services/collector"
+        secret:
+          type: string
+          description: HMAC-SHA256 secret used to sign payloads (write-only)
+          writeOnly: true
+        is_active:
+          type: boolean
+        event_types:
+          type: array
+          description: |
+            Filter to only these event types. Empty array = all events.
+            Valid values: Email Sent, Email Opened, Clicked Link, Submitted Data,
+            Email Reported, Campaign Created, Campaign Complete
+          items:
+            type: string
+          example: ["Clicked Link", "Submitted Data"]
+
+    WebhookInput:
+      type: object
+      required: [name, url]
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+        secret:
+          type: string
+        is_active:
+          type: boolean
+        event_types:
+          type: array
+          items:
+            type: string
+
+    WebhookDelivery:
+      type: object
+      description: Record of a single webhook dispatch attempt.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        webhook_id:
+          type: integer
+        payload:
+          $ref: '#/components/schemas/WebhookPayload'
+        status_code:
+          type: integer
+          description: HTTP status code returned by the receiver (0 if no response)
+          example: 200
+        error:
+          type: string
+          description: Error message if the delivery failed
+        attempt:
+          type: integer
+          description: Attempt number (1 = first try, up to 3 with exponential backoff)
+        created_at:
+          type: string
+          format: date-time
+
+    WebhookPayload:
+      type: object
+      description: |
+        Payload POSTed to the webhook URL for each phishing event.
+        The HMAC-SHA256 signature is in the `X-HailBytes-Signature` header
+        (format: `sha256=<hex-digest>`).
+      required: [success, campaign_id, message, details]
+      properties:
+        success:
+          type: boolean
+          description: Always true for event notifications
+        campaign_id:
+          type: integer
+          description: ID of the campaign that generated this event
+        message:
+          type: string
+          description: Human-readable event type
+          enum:
+            - Email Sent
+            - Email Opened
+            - Clicked Link
+            - Submitted Data
+            - Email Reported
+            - Campaign Created
+            - Campaign Complete
+          example: "Clicked Link"
+        details:
+          $ref: '#/components/schemas/WebhookEventDetails'
+
+    WebhookEventDetails:
+      type: object
+      description: Per-event detail fields. Fields present vary by event type.
+      properties:
+        payload:
+          type: object
+          description: Form data submitted by the target (Submitted Data events only)
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            username: ["alice@example.com"]
+            password: ["[redacted]"]
+        browser:
+          type: object
+          description: Browser fingerprint captured from the target
+          properties:
+            address:
+              type: string
+              description: Client IP address
+              example: "198.51.100.42"
+            user-agent:
+              type: string
+              example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)..."
+        rid:
+          type: string
+          description: Unique recipient ID for this target in this campaign
+          example: "a1b2c3d4"
+
+    # ── Reporting schemas ──────────────────────────────────────────────────────
+    TrendReport:
+      type: object
+      properties:
+        period:
+          type: string
+          enum: [monthly, weekly]
+        data_points:
+          type: array
+          items:
+            type: object
+            properties:
+              period_label:
+                type: string
+                example: "2026-01"
+              click_rate:
+                type: number
+                format: float
+                example: 0.18
+              submit_rate:
+                type: number
+                format: float
+                example: 0.07
+              campaign_count:
+                type: integer
+
+    CohortReport:
+      type: object
+      properties:
+        cohorts:
+          type: array
+          items:
+            type: object
+            properties:
+              department:
+                type: string
+                description: Derived from the `position` field on targets
+                example: "Finance"
+              total_targets:
+                type: integer
+              open_rate:
+                type: number
+                format: float
+              click_rate:
+                type: number
+                format: float
+              submit_rate:
+                type: number
+                format: float
+              risk_score:
+                type: number
+                format: float
+                description: 0–100 composite risk score (click×40 + submit×50 + open×10)
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [System]
+      summary: Health check
+      description: Returns the health status of the API and database. Does not require authentication.
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Service degraded (e.g. DB unreachable)
+
+  /ready:
+    get:
+      operationId: getReady
+      tags: [System]
+      summary: Readiness check
+      description: Returns readiness for load balancer traffic. Does not require authentication.
+      security: []
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessStatus'
+        '503':
+          description: Not ready
+
+  /campaigns/:
+    get:
+      operationId: listCampaigns
+      tags: [Campaigns]
+      summary: List campaigns
+      description: Returns all campaigns for the authenticated user.
+      responses:
+        '200':
+          description: Array of campaigns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Campaign'
+    post:
+      operationId: createCampaign
+      tags: [Campaigns]
+      summary: Create campaign
+      description: |
+        Creates a new phishing campaign and optionally launches it.
+        Requires the `launch_campaigns` permission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignCreate'
+      responses:
+        '201':
+          description: Campaign created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '403':
+          description: Insufficient permissions
+
+  /campaigns/summary:
+    get:
+      operationId: listCampaignSummaries
+      tags: [Campaigns]
+      summary: List campaign summaries
+      description: Returns lightweight campaign summaries with stats (no full results).
+      responses:
+        '200':
+          description: Campaign summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  campaigns:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CampaignSummary'
+
+  /campaigns/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Numeric ID of the campaign.
+    get:
+      operationId: getCampaign
+      tags: [Campaigns]
+      summary: Get campaign
+      responses:
+        '200':
+          description: Campaign detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '404':
+          description: Not found
+      description: Returns the full campaign object including results and timeline.
+    delete:
+      operationId: deleteCampaign
+      tags: [Campaigns]
+      summary: Delete campaign
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+      description: Permanently deletes the campaign and all associated results.
+  /campaigns/{id}/results:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Numeric ID of the campaign.
+      - name: page
+        in: query
+        schema:
+          type: integer
+        description: Page number (1-based). Omit for unpaginated response.
+      - name: per_page
+        in: query
+        schema:
+          type: integer
+        description: Results per page (default 100).
+    get:
+      operationId: getCampaignResults
+      tags: [Campaigns]
+      summary: Get campaign results
+      description: |
+        Returns results and timeline events for a campaign.
+        Supports optional pagination via `?page=&per_page=`.
+        Requires the `view_results` permission.
+      responses:
+        '200':
+          description: Campaign results (paginated or full)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/PagedResults'
+        '403':
+          description: Insufficient permissions
+
+  /campaigns/{id}/summary:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Numeric ID of the campaign.
+    get:
+      operationId: getCampaignSummary
+      tags: [Campaigns]
+      summary: Get campaign summary
+      responses:
+        '200':
+          description: Campaign summary with stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignSummary'
+
+      description: Returns a single campaign summary with aggregate stats.
+  /campaigns/{id}/complete:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Numeric ID of the campaign.
+    get:
+      operationId: completeCampaign
+      tags: [Campaigns]
+      summary: Complete campaign
+      description: Marks the campaign as complete, stopping future email sends.
+      responses:
+        '200':
+          description: Campaign completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /campaigns/{id}/submit-review:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Numeric ID of the campaign.
+    post:
+      operationId: submitCampaignForReview
+      tags: [Approval Workflow]
+      summary: Submit campaign for review
+      description: |
+        Transitions a Draft or Created campaign to the "In Review" state.
+        The campaign owner submits it for approval before launch.
+      responses:
+        '200':
+          description: Campaign submitted for review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '400':
+          description: Campaign not in Draft/Created state
+
+  /campaigns/{id}/approve:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Numeric ID of the campaign.
+    post:
+      operationId: approveCampaign
+      tags: [Approval Workflow]
+      summary: Approve campaign
+      description: |
+        Approves a campaign that is "In Review", moving it to "Approved" state.
+        Requires the `approve_campaigns` permission.
+      responses:
+        '200':
+          description: Campaign approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '400':
+          description: Campaign not in Review state
+        '403':
+          description: Insufficient permissions
+
+  /campaigns/{id}/reject:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Numeric ID of the campaign.
+    post:
+      operationId: rejectCampaign
+      tags: [Approval Workflow]
+      summary: Reject campaign
+      description: |
+        Rejects a campaign that is "In Review", returning it to "Draft" state.
+        The campaign owner can then revise and resubmit.
+        Requires the `approve_campaigns` permission.
+      responses:
+        '200':
+          description: Campaign rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '400':
+          description: Campaign not in Review state
+        '403':
+          description: Insufficient permissions
+
+  /groups/:
+    get:
+      operationId: listGroups
+      tags: [Groups]
+      summary: List groups
+      responses:
+        '200':
+          description: Array of groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+      description: Returns all target groups for the authenticated user.
+    post:
+      operationId: createGroup
+      tags: [Groups]
+      summary: Create group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Group'
+      responses:
+        '201':
+          description: Group created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+
+      description: Creates a new target group.
+  /groups/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Numeric ID of the target group.
+    get:
+      operationId: getGroup
+      tags: [Groups]
+      summary: Get group
+      responses:
+        '200':
+          description: Group detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+      description: Returns a single target group by ID.
+    put:
+      operationId: updateGroup
+      tags: [Groups]
+      summary: Update group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Group'
+      responses:
+        '200':
+          description: Updated group
+      description: Updates an existing target group.
+    delete:
+      operationId: deleteGroup
+      tags: [Groups]
+      summary: Delete group
+      responses:
+        '200':
+          description: Deleted
+
+      description: Deletes the target group.
+  /templates/:
+    get:
+      operationId: listTemplates
+      tags: [Templates]
+      summary: List email templates
+      responses:
+        '200':
+          description: Array of templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Template'
+      description: Returns all email templates for the authenticated user.
+    post:
+      operationId: createTemplate
+      tags: [Templates]
+      summary: Create email template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Template'
+      responses:
+        '201':
+          description: Template created
+
+      description: Creates a new email template.
+  /templates/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Numeric ID of the email template.
+    get:
+      operationId: getTemplate
+      tags: [Templates]
+      summary: Get email template
+      responses:
+        '200':
+          description: Template detail
+      description: Returns a single email template by ID.
+    put:
+      operationId: updateTemplate
+      tags: [Templates]
+      summary: Update email template
+      responses:
+        '200':
+          description: Updated
+      description: Updates an existing email template.
+    delete:
+      operationId: deleteTemplate
+      tags: [Templates]
+      summary: Delete email template
+      responses:
+        '200':
+          description: Deleted
+
+      description: Deletes the email template.
+  /pages/:
+    get:
+      operationId: listPages
+      tags: [Landing Pages]
+      summary: List landing pages
+      responses:
+        '200':
+          description: Array of pages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Page'
+      description: Returns all landing pages for the authenticated user.
+    post:
+      operationId: createPage
+      tags: [Landing Pages]
+      summary: Create landing page
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Page'
+      responses:
+        '201':
+          description: Page created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+
+      description: Creates a new landing page.
+  /pages/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Numeric ID of the landing page.
+    get:
+      operationId: getPage
+      tags: [Landing Pages]
+      summary: Get landing page
+      responses:
+        '200':
+          description: Page detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+      description: Returns a single landing page by ID.
+    put:
+      operationId: updatePage
+      tags: [Landing Pages]
+      summary: Update landing page
+      responses:
+        '200':
+          description: Updated
+      description: Updates an existing landing page.
+    delete:
+      operationId: deletePage
+      tags: [Landing Pages]
+      summary: Delete landing page
+      responses:
+        '200':
+          description: Deleted
+
+      description: Deletes the landing page.
+  /smtp/:
+    get:
+      operationId: listSendingProfiles
+      tags: [Sending Profiles]
+      summary: List sending profiles
+      responses:
+        '200':
+          description: Array of SMTP profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SMTP'
+      description: Returns all SMTP sending profiles for the authenticated user.
+    post:
+      operationId: createSendingProfile
+      tags: [Sending Profiles]
+      summary: Create sending profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SMTP'
+      responses:
+        '201':
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SMTP'
+
+      description: Creates a new SMTP sending profile.
+  /smtp/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Numeric ID of the SMTP sending profile.
+    get:
+      operationId: getSendingProfile
+      tags: [Sending Profiles]
+      summary: Get sending profile
+      responses:
+        '200':
+          description: Profile detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SMTP'
+      description: Returns a single SMTP sending profile by ID.
+    put:
+      operationId: updateSendingProfile
+      tags: [Sending Profiles]
+      summary: Update sending profile
+      responses:
+        '200':
+          description: Updated
+      description: Updates an existing SMTP sending profile.
+    delete:
+      operationId: deleteSendingProfile
+      tags: [Sending Profiles]
+      summary: Delete sending profile
+      responses:
+        '200':
+          description: Deleted
+
+      description: Deletes the SMTP sending profile.
+  /roles/:
+    get:
+      operationId: listRoles
+      tags: [Admin]
+      summary: List roles
+      description: Returns all available user roles. Requires `modify_system` permission.
+      responses:
+        '200':
+          description: Array of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        '403':
+          description: Insufficient permissions
+
+  /users/:
+    get:
+      operationId: listUsers
+      tags: [Admin]
+      summary: List users
+      description: Returns all system users. Requires `modify_system` permission.
+      responses:
+        '200':
+          description: Array of users
+        '403':
+          description: Insufficient permissions
+    post:
+      operationId: createUser
+      tags: [Admin]
+      summary: Create user
+      description: Creates a new system user. Requires `modify_system` permission.
+      responses:
+        '201':
+          description: User created
+        '403':
+          description: Insufficient permissions
+
+  /util/send_test_email:
+    post:
+      operationId: sendTestEmail
+      tags: [Utilities]
+      summary: Send test email
+      description: Sends a test phishing email without creating a campaign.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                template:
+                  $ref: '#/components/schemas/TemplateRef'
+                page:
+                  $ref: '#/components/schemas/PageRef'
+                smtp:
+                  $ref: '#/components/schemas/SMTPRef'
+                url:
+                  type: string
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                email:
+                  type: string
+                position:
+                  type: string
+      responses:
+        '200':
+          description: Test email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /import/group:
+    post:
+      operationId: importGroup
+      tags: [Utilities]
+      summary: Import targets from CSV
+      description: Parses a CSV file and returns a list of targets for use in a group.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Parsed targets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Target'
+
+  # ── SAML 2.0 SSO (unauthenticated — browser-facing) ────────────────────────
+  /sso/saml/metadata:
+    get:
+      operationId: getSAMLMetadata
+      tags: [SSO]
+      summary: SAML SP metadata
+      description: |
+        Returns the SAML 2.0 Service Provider (SP) metadata document as XML.
+        Provide this URL to your Identity Provider (IdP) when configuring the
+        HailBytes SAT SP trust entry.
+
+        This endpoint is unauthenticated and does not require an API key.
+      security: []
+      responses:
+        '200':
+          description: SP metadata XML
+          content:
+            application/xml:
+              schema:
+                type: string
+                example: '<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" ...>'
+        '404':
+          description: SAML SSO is not configured
+
+  /sso/saml/login:
+    get:
+      operationId: initiateSAMLLogin
+      tags: [SSO]
+      summary: Initiate SAML SP-initiated SSO
+      description: |
+        Redirects the browser to the configured IdP with a signed AuthnRequest.
+        The optional `next` query parameter specifies the path to redirect to
+        after successful authentication.
+
+        This endpoint is unauthenticated.
+      security: []
+      parameters:
+        - name: next
+          in: query
+          required: false
+          description: Path to redirect to after login (must be a relative path)
+          schema:
+            type: string
+            example: /campaigns
+      responses:
+        '302':
+          description: Redirect to IdP login page
+        '404':
+          description: SAML SSO is not configured
+
+  /sso/saml/acs:
+    post:
+      operationId: samlAssertionConsumer
+      tags: [SSO]
+      summary: SAML Assertion Consumer Service
+      description: |
+        Receives the signed SAMLResponse POST from the IdP. Validates the
+        assertion, JIT-provisions the user if configured, issues a session
+        cookie, and redirects to the dashboard (or the `next` path stored
+        during `/sso/saml/login`).
+
+        This endpoint is called by the IdP browser redirect, not directly
+        by API clients.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [SAMLResponse]
+              properties:
+                SAMLResponse:
+                  type: string
+                  description: Base64-encoded, signed SAML Response XML from the IdP
+                RelayState:
+                  type: string
+                  description: Opaque relay state passed through the IdP (optional)
+      responses:
+        '302':
+          description: Authentication successful — redirecting to dashboard
+        '400':
+          description: Missing or malformed SAMLResponse
+        '403':
+          description: SAML response failed validation
+        '404':
+          description: SAML SSO is not configured
+
+  # ── Webhook payload schema (8.6) ────────────────────────────────────────────
+  /webhooks/:
+    get:
+      operationId: listWebhooks
+      tags: [Webhooks]
+      summary: List webhooks
+      description: Returns all configured outbound webhooks.
+      responses:
+        '200':
+          description: List of webhooks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Webhook'
+    post:
+      operationId: createWebhook
+      tags: [Webhooks]
+      summary: Create webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookInput'
+      responses:
+        '201':
+          description: Webhook created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+
+      description: Creates a new outbound webhook subscription.
+  /webhooks/{id}:
+    get:
+      operationId: getWebhook
+      tags: [Webhooks]
+      summary: Get webhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Numeric ID of the webhook subscription.
+      responses:
+        '200':
+          description: Webhook object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+      description: Returns a single webhook subscription by ID.
+    put:
+      operationId: updateWebhook
+      tags: [Webhooks]
+      summary: Update webhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Numeric ID of the webhook subscription.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookInput'
+      responses:
+        '200':
+          description: Updated webhook
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+      description: Updates an existing webhook subscription.
+    delete:
+      operationId: deleteWebhook
+      tags: [Webhooks]
+      summary: Delete webhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Numeric ID of the webhook subscription.
+      responses:
+        '200':
+          description: Webhook deleted
+
+      description: Deletes the webhook subscription. In-flight deliveries are not cancelled.
+  /webhooks/{id}/deliveries:
+    get:
+      operationId: listWebhookDeliveries
+      tags: [Webhooks]
+      summary: List delivery history for a webhook
+      description: Returns the last 100 delivery attempts for the specified webhook.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Numeric ID of the webhook subscription.
+      responses:
+        '200':
+          description: Delivery history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WebhookDelivery'
+
+  /webhooks/{id}/deliveries/{delivery_id}/replay:
+    post:
+      operationId: replayWebhookDelivery
+      tags: [Webhooks]
+      summary: Replay a webhook delivery
+      description: Re-sends the payload from a previous delivery attempt.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Numeric ID of the webhook subscription.
+        - name: delivery_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Numeric ID of the historical delivery to replay.
+      responses:
+        '200':
+          description: Replay queued
+
+  # ── Reporting ────────────────────────────────────────────────────────────────
+  /reports/executive:
+    get:
+      operationId: getExecutiveReport
+      tags: [Reporting]
+      summary: Executive summary report
+      description: |
+        Returns an HTML executive report suitable for browser printing to PDF.
+        Includes campaign summary, click/submit rates, risk score, and
+        department breakdown.
+      parameters:
+        - name: campaign_id
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Optional campaign ID. If omitted, the report aggregates across all campaigns.
+      responses:
+        '200':
+          description: HTML report
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /reports/trends:
+    get:
+      operationId: getTrendsReport
+      tags: [Reporting]
+      summary: Click-rate trend analysis
+      description: Returns click-rate and submission-rate time series across campaigns.
+      responses:
+        '200':
+          description: Trend data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendReport'
+
+  /reports/cohorts:
+    get:
+      operationId: getCohortsReport
+      tags: [Reporting]
+      summary: Department/cohort comparison
+      description: Returns per-department aggregated phishing metrics.
+      responses:
+        '200':
+          description: Cohort report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CohortReport'
+
+tags:
+  - name: Admin
+    description: System administration (requires modify_system permission)
+  - name: Approval Workflow
+    description: Campaign review and approval state machine
+  - name: Campaigns
+    description: Create and manage phishing campaigns
+  - name: Groups
+    description: Target groups and recipients
+  - name: Landing Pages
+    description: Phishing landing pages
+  - name: Reporting
+    description: Executive reports, trend analysis, and cohort comparisons
+  - name: Sending Profiles
+    description: SMTP sending profiles
+  - name: SSO
+    description: SAML 2.0 and OIDC single sign-on (browser-facing, no API key required)
+  - name: System
+    description: Health and readiness checks
+  - name: Templates
+    description: Phishing email templates
+  - name: Utilities
+    description: Helper endpoints
+  - name: Webhooks
+    description: Outbound event webhooks with delivery history and replay
