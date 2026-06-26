@@ -456,6 +456,10 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: bad_request
+              message: "targets must contain at least one entry"
     RateLimited:
       description: Rate limit exceeded
       headers:
@@ -467,6 +471,10 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: rate_limited
+              message: "Rate limit exceeded. Retry after 42 seconds."
 
   schemas:
     # ── Enums ──────────────────────────────────────────────────────────────────

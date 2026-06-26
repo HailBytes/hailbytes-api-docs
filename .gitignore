@@ -1,0 +1,20 @@
+# Environment files — never commit API keys or secrets
+.env
+.env.*
+!.env.example
+
+# Editor and OS artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node (if tooling is added later)
+node_modules/
+npm-debug.log*
+
+# Build output from deploy-docs.yml (local runs)
+_site/
