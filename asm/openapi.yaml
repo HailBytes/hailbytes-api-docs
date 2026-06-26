@@ -347,6 +347,7 @@ paths:
     get:
       operationId: listTags
       summary: List tags
+      description: Returns all organizational tags defined in the tenant.
       tags: [Tags]
       responses:
         '200':
@@ -365,6 +366,7 @@ paths:
     post:
       operationId: createTag
       summary: Create tag
+      description: Creates a new organizational tag that can be applied to assets.
       tags: [Tags]
       requestBody:
         required: true

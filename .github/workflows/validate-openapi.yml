@@ -5,10 +5,14 @@ on:
     paths:
       - '*/openapi.yaml'
       - '*/openapi.json'
+      - '.spectral.yaml'
+      - '.github/workflows/validate-openapi.yml'
   pull_request:
     paths:
       - '*/openapi.yaml'
       - '*/openapi.json'
+      - '.spectral.yaml'
+      - '.github/workflows/validate-openapi.yml'
 
 jobs:
   spectral:
@@ -25,10 +29,15 @@ jobs:
       - name: Install Spectral
         run: npm install -g @stoplight/spectral-cli@6.16.0
 
+      # `spectral:oas` is the built-in ruleset, but it must be referenced via
+      # a ruleset file's `extends` (see .spectral.yaml) — passing it directly
+      # as `--ruleset spectral:oas` is not valid in spectral-cli 6.x and fails
+      # with "Could not read ruleset". Error-severity findings gate the build;
+      # warnings are advisory (matches the hailbytes-sat repo's lint policy).
       - name: Lint ASM OpenAPI spec
         if: ${{ hashFiles('asm/openapi.yaml') != '' }}
-        run: spectral lint asm/openapi.yaml --ruleset spectral:oas --fail-severity warn
+        run: spectral lint asm/openapi.yaml --ruleset .spectral.yaml --fail-severity error
 
       - name: Lint SAT OpenAPI spec
         if: ${{ hashFiles('sat/openapi.yaml') != '' }}
-        run: spectral lint sat/openapi.yaml --ruleset spectral:oas --fail-severity warn
+        run: spectral lint sat/openapi.yaml --ruleset .spectral.yaml --fail-severity error
