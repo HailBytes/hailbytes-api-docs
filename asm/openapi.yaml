@@ -121,6 +121,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
     patch:
       operationId: updateAsset
       summary: Update asset
@@ -145,6 +147,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
     delete:
       operationId: deleteAsset
       summary: Archive asset
@@ -159,6 +163,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /scans:
     get:
@@ -189,6 +195,8 @@ paths:
                           $ref: '#/components/schemas/Scan'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
     post:
       operationId: triggerScan
       summary: Trigger scan
@@ -241,6 +249,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /vulnerabilities:
     get:
@@ -292,6 +302,8 @@ paths:
                           $ref: '#/components/schemas/Vulnerability'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /vulnerabilities/{vuln_id}:
     parameters:
@@ -318,6 +330,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
     patch:
       operationId: updateVulnerability
       summary: Update vulnerability
@@ -342,6 +356,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /tags:
     get:
@@ -363,6 +379,8 @@ paths:
                       $ref: '#/components/schemas/Tag'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
     post:
       operationId: createTag
       summary: Create tag
@@ -394,6 +412,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
 components:
   securitySchemes:
@@ -429,6 +449,18 @@ components:
         pattern: '^ast_[a-z0-9]{16}$'
       example: ast_1a2b3c4d5e6f0001
 
+  headers:
+    X-RateLimit-Limit:
+      description: Maximum number of requests allowed per minute for this API key
+      schema:
+        type: integer
+        example: 600
+    X-RateLimit-Remaining:
+      description: Number of requests remaining in the current one-minute window
+      schema:
+        type: integer
+        example: 542
+
   responses:
     Unauthorized:
       description: Missing or invalid API key
@@ -463,6 +495,10 @@ components:
           schema:
             type: integer
           description: Seconds until the rate limit window resets
+        X-RateLimit-Limit:
+          $ref: '#/components/headers/X-RateLimit-Limit'
+        X-RateLimit-Remaining:
+          $ref: '#/components/headers/X-RateLimit-Remaining'
       content:
         application/json:
           schema:
