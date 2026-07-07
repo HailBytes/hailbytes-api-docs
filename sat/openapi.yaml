@@ -1008,6 +1008,12 @@ paths:
       operationId: updateTemplate
       tags: [Templates]
       summary: Update email template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Template'
       responses:
         '200':
           description: Updated
@@ -1079,6 +1085,12 @@ paths:
       operationId: updatePage
       tags: [Landing Pages]
       summary: Update landing page
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Page'
       responses:
         '200':
           description: Updated
@@ -1150,6 +1162,12 @@ paths:
       operationId: updateSendingProfile
       tags: [Sending Profiles]
       summary: Update sending profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SMTP'
       responses:
         '200':
           description: Updated
