@@ -54,13 +54,21 @@ curl -X GET "https://api.hailbytes.com/asm/v1/assets" \
   -H "Content-Type: application/json"
 ```
 
-### SAT — Enroll a User
+### SAT — Enroll Users (Create a Target Group)
+
+SAT is self-hosted, so replace `<your-sat-host>` with your own instance's
+address. Users are enrolled by adding them as targets on a group:
 
 ```bash
-curl -X POST "https://api.hailbytes.com/sat/v1/users" \
+curl -X POST "https://<your-sat-host>/api/v1/groups/" \
   -H "Authorization: Bearer <your-api-key>" \
   -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "group_id": "grp_abc123"}'
+  -d '{
+    "name": "New Hires",
+    "targets": [
+      {"email": "user@example.com", "first_name": "Jane", "last_name": "Doe"}
+    ]
+  }'
 ```
 
 ---
