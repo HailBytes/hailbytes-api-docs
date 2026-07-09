@@ -54,13 +54,18 @@ curl -X GET "https://api.hailbytes.com/asm/v1/assets" \
   -H "Content-Type: application/json"
 ```
 
-### SAT — Enroll a User
+### SAT — Add a Target to a Group
+
+SAT is self-hosted, so requests go to your own SAT deployment rather than a
+shared `api.hailbytes.com` endpoint — replace the host below with your
+instance's URL. There is no `/users` enrollment endpoint; targets are added
+by creating (or updating) a group:
 
 ```bash
-curl -X POST "https://api.hailbytes.com/sat/v1/users" \
+curl -X POST "https://sat.yourcompany.com/api/groups/" \
   -H "Authorization: Bearer <your-api-key>" \
   -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "group_id": "grp_abc123"}'
+  -d '{"name": "New Hires", "targets": [{"email": "user@example.com", "first_name": "Jane", "last_name": "Doe"}]}'
 ```
 
 ---
