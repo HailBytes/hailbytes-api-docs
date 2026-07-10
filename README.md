@@ -54,13 +54,13 @@ curl -X GET "https://api.hailbytes.com/asm/v1/assets" \
   -H "Content-Type: application/json"
 ```
 
-### SAT — Enroll a User
+### SAT — Enroll a User in a Training Group
 
 ```bash
-curl -X POST "https://api.hailbytes.com/sat/v1/users" \
+curl -X POST "https://api.hailbytes.com/api/groups/" \
   -H "Authorization: Bearer <your-api-key>" \
   -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "group_id": "grp_abc123"}'
+  -d '{"name": "New Hires", "targets": [{"email": "user@example.com", "first_name": "Jane", "last_name": "Doe"}]}'
 ```
 
 ---
