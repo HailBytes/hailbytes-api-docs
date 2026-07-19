@@ -3,7 +3,7 @@
 > Official API and MCP server documentation for **HailBytes ASM** (Attack Surface Management) and **HailBytes SAT** (Security Awareness Training).
 
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
-[![OpenAPI 3.1](https://img.shields.io/badge/OpenAPI-3.1-blue.svg)](https://spec.openapis.org/oas/v3.1.0)
+[![OpenAPI 3.0/3.1](https://img.shields.io/badge/OpenAPI-3.0%2F3.1-blue.svg)](https://spec.openapis.org/oas/v3.1.0)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-purple.svg)](https://modelcontextprotocol.io)
 [![API Docs](https://img.shields.io/badge/API%20Docs-rendered-blue)](https://hailbytes.github.io/hailbytes-api-docs/)
 
@@ -11,7 +11,7 @@
 
 ## Overview
 
-This repository contains the complete API reference, OpenAPI 3.1 specifications, MCP server definitions, integration guides, and SDK examples for the HailBytes platform.
+This repository contains the complete API reference, OpenAPI specifications (ASM: 3.1, SAT: 3.0), MCP server definitions, integration guides, and SDK examples for the HailBytes platform.
 
 - **HailBytes ASM** — continuous attack surface discovery, asset inventory, and vulnerability correlation for enterprise security teams and MSSPs.
 - **HailBytes SAT** — automated security awareness training delivery, phishing simulation, and compliance reporting.
@@ -26,7 +26,7 @@ This repository contains the complete API reference, OpenAPI 3.1 specifications,
 | Path | Description |
 |------|-------------|
 | `asm/openapi.yaml` | OpenAPI 3.1 spec for the ASM REST API |
-| `sat/openapi.yaml` | OpenAPI 3.0 spec for the SAT REST API |
+| `sat/openapi.yaml` | OpenAPI 3.0.3 spec for the SAT REST API |
 | `mcp/` | MCP server definitions for ASM and SAT tool integrations *(coming soon)* |
 | `guides/` | Integration guides (SIEM, ticketing, MSSP multi-tenant) *(coming soon)* |
 | `sdk/` | SDK examples (Python, Go, TypeScript) *(coming soon)* |
@@ -54,13 +54,11 @@ curl -X GET "https://api.hailbytes.com/asm/v1/assets" \
   -H "Content-Type: application/json"
 ```
 
-### SAT — Enroll a User
+### SAT — List Campaigns
 
 ```bash
-curl -X POST "https://api.hailbytes.com/sat/v1/users" \
-  -H "Authorization: Bearer <your-api-key>" \
-  -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "group_id": "grp_abc123"}'
+curl -X GET "https://<your-sat-host>/api/campaigns/" \
+  -H "Authorization: Bearer <your-api-key>"
 ```
 
 ---
