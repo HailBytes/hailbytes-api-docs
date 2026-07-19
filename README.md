@@ -92,6 +92,12 @@ HailBytes supports MSSP deployments with tenant isolation, delegated API keys, a
 
 ---
 
+## Contributing
+
+Before opening an issue or PR, please check [CONTRIBUTING.md](CONTRIBUTING.md) —
+in particular, search existing open issues/PRs first to avoid duplicating
+work already in flight.
+
 ## Support
 
 - 📧 [support@hailbytes.com](mailto:support@hailbytes.com)
