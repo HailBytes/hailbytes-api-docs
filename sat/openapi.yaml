@@ -42,6 +42,38 @@ components:
       scheme: bearer
       bearerFormat: hailbytes-sat-api-key
 
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Response'
+          example:
+            message: Invalid or missing API key
+            success: false
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Response'
+          example:
+            message: Resource not found
+            success: false
+    BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Response'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Response'
+
   schemas:
     Response:
       type: object
@@ -637,6 +669,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Campaign'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
     post:
       operationId: createCampaign
       tags: [Campaigns]
@@ -663,8 +699,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Insufficient permissions
+          description: Missing the `launch_campaigns` permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /campaigns/summary:
     get:
@@ -686,6 +730,10 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/CampaignSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /campaigns/{id}:
     parameters:
@@ -706,8 +754,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Campaign'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Returns the full campaign object including results and timeline.
     delete:
       operationId: deleteCampaign
@@ -720,6 +776,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
       description: Permanently deletes the campaign and all associated results.
   /campaigns/{id}/results:
@@ -756,8 +818,18 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/PagedResults'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Insufficient permissions
+          description: Missing the `view_results` permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /campaigns/{id}/summary:
     parameters:
@@ -778,6 +850,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CampaignSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
       description: Returns a single campaign summary with aggregate stats.
   /campaigns/{id}/complete:
@@ -800,6 +878,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /campaigns/{id}/submit-review:
     parameters:
@@ -825,6 +909,16 @@ paths:
                 $ref: '#/components/schemas/Response'
         '400':
           description: Campaign not in Draft/Created state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /campaigns/{id}/approve:
     parameters:
@@ -850,8 +944,22 @@ paths:
                 $ref: '#/components/schemas/Response'
         '400':
           description: Campaign not in Review state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Insufficient permissions
+          description: Missing the `approve_campaigns` permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /campaigns/{id}/reject:
     parameters:
@@ -878,8 +986,22 @@ paths:
                 $ref: '#/components/schemas/Response'
         '400':
           description: Campaign not in Review state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Insufficient permissions
+          description: Missing the `approve_campaigns` permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /groups/:
     get:
@@ -895,6 +1017,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Group'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Returns all target groups for the authenticated user.
     post:
       operationId: createGroup
@@ -913,6 +1039,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
       description: Creates a new target group.
   /groups/{id}:
@@ -934,6 +1066,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Group'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Returns a single target group by ID.
     put:
       operationId: updateGroup
@@ -948,6 +1086,14 @@ paths:
       responses:
         '200':
           description: Updated group
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Updates an existing target group.
     delete:
       operationId: deleteGroup
@@ -956,6 +1102,12 @@ paths:
       responses:
         '200':
           description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
       description: Deletes the target group.
   /templates/:
@@ -972,6 +1124,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Template'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Returns all email templates for the authenticated user.
     post:
       operationId: createTemplate
@@ -986,6 +1142,12 @@ paths:
       responses:
         '201':
           description: Template created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
       description: Creates a new email template.
   /templates/{id}:
@@ -1003,6 +1165,12 @@ paths:
       responses:
         '200':
           description: Template detail
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Returns a single email template by ID.
     put:
       operationId: updateTemplate
@@ -1011,6 +1179,14 @@ paths:
       responses:
         '200':
           description: Updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Updates an existing email template.
     delete:
       operationId: deleteTemplate
@@ -1019,6 +1195,12 @@ paths:
       responses:
         '200':
           description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
       description: Deletes the email template.
   /pages/:
@@ -1035,6 +1217,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Page'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Returns all landing pages for the authenticated user.
     post:
       operationId: createPage
@@ -1053,6 +1239,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
       description: Creates a new landing page.
   /pages/{id}:
@@ -1074,6 +1266,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Returns a single landing page by ID.
     put:
       operationId: updatePage
@@ -1082,6 +1280,14 @@ paths:
       responses:
         '200':
           description: Updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Updates an existing landing page.
     delete:
       operationId: deletePage
@@ -1090,6 +1296,12 @@ paths:
       responses:
         '200':
           description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
       description: Deletes the landing page.
   /smtp/:
@@ -1106,6 +1318,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SMTP'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Returns all SMTP sending profiles for the authenticated user.
     post:
       operationId: createSendingProfile
@@ -1124,6 +1340,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SMTP'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
       description: Creates a new SMTP sending profile.
   /smtp/{id}:
@@ -1145,6 +1367,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SMTP'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Returns a single SMTP sending profile by ID.
     put:
       operationId: updateSendingProfile
@@ -1153,6 +1381,14 @@ paths:
       responses:
         '200':
           description: Updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Updates an existing SMTP sending profile.
     delete:
       operationId: deleteSendingProfile
@@ -1161,6 +1397,12 @@ paths:
       responses:
         '200':
           description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
       description: Deletes the SMTP sending profile.
   /roles/:
@@ -1178,8 +1420,16 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Role'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Insufficient permissions
+          description: Missing the `modify_system` permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /users/:
     get:
@@ -1190,8 +1440,16 @@ paths:
       responses:
         '200':
           description: Array of users
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Insufficient permissions
+          description: Missing the `modify_system` permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '500':
+          $ref: '#/components/responses/InternalError'
     post:
       operationId: createUser
       tags: [Admin]
@@ -1200,8 +1458,16 @@ paths:
       responses:
         '201':
           description: User created
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Insufficient permissions
+          description: Missing the `modify_system` permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /util/send_test_email:
     post:
@@ -1239,6 +1505,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /import/group:
     post:
@@ -1265,6 +1537,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Target'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   # ── SAML 2.0 SSO (unauthenticated — browser-facing) ────────────────────────
   /sso/saml/metadata:
@@ -1370,6 +1648,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Webhook'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
     post:
       operationId: createWebhook
       tags: [Webhooks]
@@ -1387,6 +1669,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Webhook'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
       description: Creates a new outbound webhook subscription.
   /webhooks/{id}:
@@ -1408,6 +1696,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Webhook'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Returns a single webhook subscription by ID.
     put:
       operationId: updateWebhook
@@ -1433,6 +1727,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Webhook'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
       description: Updates an existing webhook subscription.
     delete:
       operationId: deleteWebhook
@@ -1448,6 +1750,12 @@ paths:
       responses:
         '200':
           description: Webhook deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
       description: Deletes the webhook subscription. In-flight deliveries are not cancelled.
   /webhooks/{id}/deliveries:
@@ -1472,6 +1780,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WebhookDelivery'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /webhooks/{id}/deliveries/{delivery_id}/replay:
     post:
@@ -1495,6 +1809,12 @@ paths:
       responses:
         '200':
           description: Replay queued
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   # ── Reporting ────────────────────────────────────────────────────────────────
   /reports/executive:
@@ -1520,6 +1840,10 @@ paths:
             text/html:
               schema:
                 type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /reports/trends:
     get:
@@ -1534,6 +1858,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TrendReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /reports/cohorts:
     get:
@@ -1548,6 +1876,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CohortReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
 tags:
   - name: Admin
