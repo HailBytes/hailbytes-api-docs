@@ -14,6 +14,9 @@ on:
       - '.spectral.yaml'
       - '.github/workflows/validate-openapi.yml'
 
+permissions:
+  contents: read
+
 jobs:
   spectral:
     name: Lint with Spectral
