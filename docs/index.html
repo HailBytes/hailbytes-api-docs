@@ -46,10 +46,12 @@
   <body>
     <div id="nav">
       <span class="brand">HailBytes API Reference</span>
-      <button id="tab-asm" data-spec="asm-openapi.yaml">ASM &mdash; Attack Surface Management</button>
-      <button id="tab-sat" data-spec="sat-openapi.yaml">SAT &mdash; Security Awareness Training</button>
+      <div role="tablist" aria-label="API specification" style="display: contents">
+        <button id="tab-asm" role="tab" aria-selected="true" aria-controls="redoc-container" data-spec="asm-openapi.yaml">ASM &mdash; Attack Surface Management</button>
+        <button id="tab-sat" role="tab" aria-selected="false" aria-controls="redoc-container" data-spec="sat-openapi.yaml">SAT &mdash; Security Awareness Training</button>
+      </div>
     </div>
-    <div id="redoc-container"></div>
+    <div id="redoc-container" role="tabpanel" aria-live="polite"></div>
     <script
       src="https://cdn.jsdelivr.net/npm/redoc@2.5.3/bundles/redoc.standalone.js"
       integrity="sha384-xiEssMQFSpSfLbzRZCGfxxIM5QDb2DTrU6vyoZdp2sV1L6pmOMy6MpTtUoLbpC96"
@@ -71,8 +73,10 @@
       function activate(btn) {
         document.querySelectorAll("#nav button").forEach(function (b) {
           b.classList.remove("active");
+          b.setAttribute("aria-selected", "false");
         });
         btn.classList.add("active");
+        btn.setAttribute("aria-selected", "true");
         loadSpec(btn.getAttribute("data-spec"));
       }
 
