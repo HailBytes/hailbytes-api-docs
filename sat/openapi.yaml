@@ -84,6 +84,14 @@ components:
           type: boolean
       required: [message, success]
 
+    CampaignStatus:
+      type: string
+      description: >
+        Lifecycle state of a campaign. Draft/In Review/Approved reflect the
+        approval workflow (see the submit-review/approve/reject endpoints);
+        Created/Queued/In progress/Emails Sent/Completed reflect send progress.
+      enum: [Created, Queued, "In progress", "Emails Sent", Completed, Draft, "In Review", Approved]
+
     CampaignStats:
       type: object
       properties:
@@ -122,8 +130,7 @@ components:
           type: string
           format: date-time
         status:
-          type: string
-          enum: [Created, Queued, "In progress", "Emails Sent", Completed, Draft, "In Review", Approved]
+          $ref: '#/components/schemas/CampaignStatus'
         stats:
           $ref: '#/components/schemas/CampaignStats'
 
@@ -165,7 +172,7 @@ components:
           type: string
           format: date-time
         status:
-          type: string
+          $ref: '#/components/schemas/CampaignStatus'
         template:
           $ref: '#/components/schemas/TemplateRef'
         page:
