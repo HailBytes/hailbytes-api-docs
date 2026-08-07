@@ -728,6 +728,7 @@ paths:
 webhooks:
   scanStatusChanged:
     post:
+      operationId: scanStatusChanged
       summary: Scan status change
       description: |
         Delivered whenever a scan transitions to `completed`, `failed`, or
@@ -774,7 +775,7 @@ webhooks:
                   description: ISO 8601 timestamp of when the event was emitted
                   example: '2025-06-20T14:23:00Z'
                 data:
-                  $ref: '#/components/schemas/ScanDetail'
+                  $ref: '#/components/schemas/ScanWebhookPayload'
             examples:
               completed:
                 summary: Scan completed successfully
@@ -1218,6 +1219,65 @@ components:
             error_message:
               type: [string, 'null']
               description: Set when status is `failed`
+
+    # `scanStatusChanged` webhook payload. Structurally the same fields as
+    # `ScanDetail`, but defined without `readOnly` markers: `readOnly` means
+    # "server-set, absent from client requests", and the OpenAPI `webhooks`
+    # keyword models each entry as a `requestBody` — so reusing `ScanDetail`
+    # here would make every one of these fields invalid in the very payload
+    # that exists to deliver them.
+    ScanWebhookPayload:
+      type: object
+      required: [id, status, scan_type, targets, created_at]
+      properties:
+        id:
+          type: string
+          example: scn_a1b2c3d4e5f60001
+        label:
+          type: [string, 'null']
+        status:
+          $ref: '#/components/schemas/ScanStatus'
+        scan_type:
+          type: string
+          enum: [full, discovery_only, vuln_only]
+        targets:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type: [string, 'null']
+          format: date-time
+        completed_at:
+          type: [string, 'null']
+          format: date-time
+        error_message:
+          type: [string, 'null']
+          description: Set when status is `failed`
+        summary:
+          type: object
+          properties:
+            assets_discovered:
+              type: integer
+            assets_updated:
+              type: integer
+            vulnerabilities_found:
+              type: integer
+            vulnerabilities_by_severity:
+              type: object
+              properties:
+                critical:
+                  type: integer
+                high:
+                  type: integer
+                medium:
+                  type: integer
+                low:
+                  type: integer
+                informational:
+                  type: integer
 
     # ── Vulnerabilities ────────────────────────────────────────────────────────
 
